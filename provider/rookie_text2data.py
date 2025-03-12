@@ -48,7 +48,6 @@ class RookieText2dataProvider(ToolProvider):
                 ssl={'ssl': None} if ssl_mode == 'DISABLED' else None,
                 connect_timeout=5,
             )
-            
             # 验证连接有效性
             with conn.cursor() as cursor:
                 cursor.execute("SELECT 1")

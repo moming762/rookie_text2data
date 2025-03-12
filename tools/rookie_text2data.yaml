@@ -12,6 +12,20 @@ description:
     pt_BR: Fetching data from the database using natural language.
   llm: Fetching data from the database using natural language.
 parameters:
+  - name: model # the name of the model parameter
+    type: model-selector # model-type
+    scope: llm # the scope of the parameter
+    form: llm
+    required: true
+    label:
+      en_US: Model
+      zh_Hans: 模型
+      pt_BR: Model
+    human_description:
+      en_US: LLM model for text2data.
+      zh_Hans: LLM model for text2data.
+      pt_BR: LLM model for text2data.
+    llm_description: LLM model for text2data.
   - name: query
     type: string
     required: true
