@@ -31,13 +31,6 @@ class RookieText2dataProvider(ToolProvider):
             query_params = parse_qs(parsed.query)
             ssl_mode = query_params.get('ssl_mode', ['DISABLED'])[0]
 
-            # 强制安装cryptography的验证
-            try:
-                import cryptography
-            except ImportError:
-                raise ValueError("Required package 'cryptography' is missing. "
-                                "Install with: pip install pymysql[cryptography]")
-
             # 建立数据库连接（包含SSL配置）
             conn = pymysql.connect(
                 host=host,

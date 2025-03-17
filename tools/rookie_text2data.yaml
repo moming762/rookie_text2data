@@ -15,7 +15,7 @@ parameters:
   - name: model # the name of the model parameter
     type: model-selector # model-type
     scope: llm # the scope of the parameter
-    form: llm
+    form: form
     required: true
     label:
       en_US: Model
