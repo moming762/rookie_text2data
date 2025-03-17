@@ -10,7 +10,7 @@ label:
 description:
   en_US: Fetching data from the database using natural language.
   ja_JP: Fetching data from the database using natural language.
-  zh_Hans: Fetching data from the database using natural language.
+  zh_Hans: 自然语言查询 MySQL 数据.
   pt_BR: Fetching data from the database using natural language.
 icon: data-collection.svg
 resource:
@@ -43,6 +43,6 @@ meta:
     language: python
     version: "3.12"
     entrypoint: main
-created_at: 2025-03-12T15:12:07.708063231+08:00
+created_at: 2025-03-13T22:33:07.708063231+08:00
 privacy: PRIVACY.md
 verified: false
