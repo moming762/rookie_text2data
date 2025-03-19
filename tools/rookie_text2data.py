@@ -53,18 +53,18 @@ class RookieText2dataTool(Tool):
                             6. 禁止在开头和结尾使用``` ```包裹SQL语句
 
                             ## 输出规范：
-                            SELECT 
-                                `order_id` AS 订单编号,
-                                `amount` * 1.05 AS 含税金额
-                            FROM 
-                                `orders` o
-                            INNER JOIN 
-                                `customers` c ON o.customer_id = c.id
-                            WHERE 
-                                o.status = 'paid' 
-                                AND c.region = 'Asia'
-                                AND o.created_at BETWEEN '2025-01-01' AND CURDATE()
-                            LIMIT 100;
+                                SELECT 
+                                    `order_id` AS 订单编号,
+                                    `amount` * 1.05 AS 含税金额
+                                FROM 
+                                    `orders` o
+                                INNER JOIN 
+                                    `customers` c ON o.customer_id = c.id
+                                WHERE 
+                                    o.status = 'paid' 
+                                    AND c.region = 'Asia'
+                                    AND o.created_at BETWEEN '2025-01-01' AND CURDATE()
+                                LIMIT 100;
                     """
                 ),
                 UserPromptMessage(
@@ -76,8 +76,6 @@ class RookieText2dataTool(Tool):
         )
 
         excute_sql = response.message.content
-
-        print(excute_sql)
 
         # 执行SQL
         result = self._execute_sql_generator(excute_sql, conn_params)
@@ -179,7 +177,7 @@ class RookieText2dataTool(Tool):
                     # 获取所有表信息
                     cursor.execute("""
                         SELECT TABLE_NAME AS table_name,
-                               TABLE_COMMENT AS table_comment
+                        TABLE_COMMENT AS table_comment
                         FROM INFORMATION_SCHEMA.TABLES
                         WHERE TABLE_SCHEMA = DATABASE()
                         AND TABLE_TYPE = 'BASE TABLE'
@@ -190,10 +188,10 @@ class RookieText2dataTool(Tool):
                     for table in tables:
                         cursor.execute("""
                             SELECT COLUMN_NAME AS name,
-                                   COLUMN_TYPE AS type,
-                                   COLUMN_COMMENT AS comment,
-                                   IS_NULLABLE AS nullable,
-                                   COLUMN_KEY AS key_type
+                                COLUMN_TYPE AS type,
+                                COLUMN_COMMENT AS comment,
+                                IS_NULLABLE AS nullable,
+                                COLUMN_KEY AS key_type
                             FROM INFORMATION_SCHEMA.COLUMNS
                             WHERE TABLE_SCHEMA = DATABASE()
                             AND TABLE_NAME = %s
