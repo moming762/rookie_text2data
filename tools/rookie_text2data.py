@@ -236,17 +236,16 @@ class RookieText2dataTool(Tool):
         import re
         pattern = r'^```sql(.*?)$$$'
         cleaned_sql = re.sub(pattern, r'\1', sql, flags=re.DOTALL)
-        print(f"cleaned_sql:{cleaned_sql}")
         connection = None
         try:
-            # 建立数据库连接（引用[2,5](@ref)）
+            # 建立数据库连接
             connection = pymysql.connect(
                 host=conn_params['host'],
                 user=conn_params['user'],
                 password=conn_params['password'],
                 database=conn_params['database'],
-                charset='utf8mb4',  # 必须指定字符集（引用[2,5](@ref)）
-                cursorclass=DictCursor  # 返回字典类型结果（引用[2,5](@ref)）
+                charset='utf8mb4',  # 必须指定字符集
+                cursorclass=DictCursor  # 返回字典类型结果
             )
             with connection.cursor() as cursor:
                 # 执行SQL语句
@@ -265,19 +264,21 @@ class RookieText2dataTool(Tool):
                 }
                 
         except pymysql.MySQLError as e:
-            # 捕获数据库特定错误（引用[5](@ref)）
+            # 捕获数据库特定错误
             yield {
                 "status": "error",
+                "excute_sql": cleaned_sql,
                 "message": f"Database error: {str(e)}"
             }
         except Exception as ex:
-            # 捕获其他异常（引用[5](@ref)）
+            # 捕获其他异常
             yield {
                 "status": "error",
+                "excute_sql": cleaned_sql,
                 "message": f"Execution error: {str(ex)}"
             }
         finally:
-            # 资源释放（引用[2,5](@ref)）
+            # 资源释放
             if connection and connection.open:
                 connection.close()
                 yield {
