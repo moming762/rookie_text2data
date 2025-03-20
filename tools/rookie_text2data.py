@@ -7,6 +7,7 @@ from dify_plugin.entities.model.llm import LLMModelConfig
 from dify_plugin.entities.tool import ToolInvokeMessage
 from dify_plugin.entities.model.message import SystemPromptMessage, UserPromptMessage
 from pymysql.cursors import DictCursor
+import re
 
 class RookieText2dataTool(Tool):
     
@@ -233,9 +234,13 @@ class RookieText2dataTool(Tool):
         :param conn_params: 数据库连接参数字典
         :yield: 返回包含执行状态和数据的字典
         """
-        import re
-        pattern = r'^```sql\s*(.*?)\s*```'
-        cleaned_sql = re.sub(pattern, r'\1', sql, flags=re.DOTALL)
+        extracted_sql = self._extract_sql_from_text(sql)
+        if not extracted_sql:
+            # 如果无法提取（未匹配到代码块），直接使用原始字符串
+            processed_sql = sql.strip()
+        else:
+            processed_sql = extracted_sql
+        
         connection = None
         try:
             # 建立数据库连接
@@ -249,7 +254,7 @@ class RookieText2dataTool(Tool):
             )
             with connection.cursor() as cursor:
                 # 执行SQL语句
-                cursor.execute(cleaned_sql)
+                cursor.execute(processed_sql)
                 
                 # 获取列名和数据（引用[2,5](@ref)）
                 columns = [desc[0] for desc in cursor.description]
@@ -258,7 +263,7 @@ class RookieText2dataTool(Tool):
                 # 生成结果集
                 yield {
                     "status": "success",
-                    "sql": cleaned_sql,
+                    "sql": processed_sql,
                     "columns": columns,
                     "data": results
                 }
@@ -267,14 +272,14 @@ class RookieText2dataTool(Tool):
             # 捕获数据库特定错误
             yield {
                 "status": "error",
-                "excute_sql": cleaned_sql,
+                "excute_sql": processed_sql,
                 "message": f"Database error: {str(e)}"
             }
         except Exception as ex:
             # 捕获其他异常
             yield {
                 "status": "error",
-                "excute_sql": cleaned_sql,
+                "excute_sql": processed_sql,
                 "message": f"Execution error: {str(ex)}"
             }
         finally:
@@ -285,3 +290,13 @@ class RookieText2dataTool(Tool):
                     "status": "info",
                     "message": "数据库连接已关闭"
                 }
+
+
+
+    def _extract_sql_from_text(self, text: str) -> str:
+        """提取 ``的```sql...```代码块中的SQL内容（若存在）"""
+        pattern = r'```sql\s*(.*?)\s*```'
+        match = re.search(pattern, text, flags=re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return ""

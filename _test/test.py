@@ -1,48 +1,30 @@
 import re
-
-def extract_sql(input_str):
-    pattern = r'^```sql\s*(.*?)\s*```'
-    match = re.search(pattern, input_str, flags=re.DOTALL)
-    if match:
-        return match.group(1).strip()
+def extract_sql_from_text(text):
+    """
+    从文本中提取 ```sql ... ``` 块内的 SQL 内容，即使前后有其他内容也能正确提取
+    """
+    # 正则解释：
+    # \s*：匹配开头可能的空格或换行
+    # (.*?)：非贪婪匹配 SQL 内容
+    # 取消了 ^ 和 $ 锚点，允许前后有其他文本，只捕获有效代码块
+    pattern = r'```sql\s*(.*?)\s*```'
+    matches = re.findall(pattern, text, flags=re.DOTALL)  # 使用 findall 捕获所有匹配项
+    
+    # 根据需求返回第一个匹配或所有匹配
+    if matches:
+        return [sql.strip() for sql in matches]# 去除 SQL 内容的首尾空白符
     return None
 
-def main():
-    test_cases = [
-        {
-            "name": "简单SQL",
-            "input": "```sql SELECT * FROM users```",
-            "expected": "SELECT * FROM users"
-        },
-        {
-            "name": "带空格的简单SQL",
-            "input": "```sql   UPDATE products SET price = 100   ```",
-            "expected": "UPDATE products SET price = 100"
-        },
-        {
-            "name": "多行SQL",
-            "input": "```sql\nINSERT INTO orders (id, user_id)\nVALUES (1, 'Alice')\n```",
-            "expected": "INSERT INTO orders (id, user_id)\nVALUES (1, 'Alice')"
-        },
-        {
-            "name": "复杂换行SQL",
-            "input": "```sql\n\nDELETE FROM logs\nWHERE timestamp < '2023-01-01'\nAND status = 'completed'\n\n```",
-            "expected": "\nDELETE FROM logs\nWHERE timestamp < '2023-01-01'\nAND status = 'completed'"
-        },
-        {
-            "name": "无效输入（无sql标记）",
-            "input": "```plain 这不是SQL```",
-            "expected": None
-        }
-    ]
-
-    for case in test_cases:
-        result = extract_sql(case["input"])
-        passed = (result == case["expected"])
-        print(f"用例 '{case['name']}' 的结果：{'✅ 通过' if passed else '❌ 失败'}")
-        print(f"输入：\n{case['input']}")
-        print(f"期望输出：\n{case['expected']!r}")
-        print(f"实际输出：\n{result!r}\n{'='*50}\n")
-
+# 测试用例
 if __name__ == "__main__":
-    main()
+    test_cases = [
+        "xxxxxx ```sql SELECT * FROM users``` xxxxxxx",
+        "```sql\nINSERT INTO logs (message) VALUES ('Hello')\n```",
+        "其他文本 ```sql UPDATE users SET name = 'John' WHERE id = 1``` 其他文本",
+        "多个块 ```sql DELETE FROM temp ``` 和 ```sql TRUNCATE temp_table ```"
+    ]
+    for i, text in enumerate(test_cases):
+        print(f"用例 {i+1}:")
+        result = extract_sql_from_text(text)
+        print(f"输入：{text}")
+        print(f"提取结果：{result}\n{'='*40}")
