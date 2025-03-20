@@ -234,7 +234,7 @@ class RookieText2dataTool(Tool):
         :yield: 返回包含执行状态和数据的字典
         """
         import re
-        pattern = r'^```sql(.*?)$$$'
+        pattern = r'^```sql\s*(.*?)\s*```'
         cleaned_sql = re.sub(pattern, r'\1', sql, flags=re.DOTALL)
         connection = None
         try:
