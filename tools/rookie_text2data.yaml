@@ -26,6 +26,19 @@ parameters:
       zh_Hans: LLM model for text2data.
       pt_BR: LLM model for text2data.
     llm_description: LLM model for text2data.
+  - name: meta_data
+    type: text
+    required: true
+    label:
+      en_US: database metadata
+      zh_Hans: 数据库元数据
+      pt_BR: database metadata
+    human_description:
+      en_US: database metadata
+      zh_Hans: database metadata
+      pt_BR: database metadata
+    llm_description: Fetching data from the database using natural language.
+    form: llm
   - name: query
     type: string
     required: true

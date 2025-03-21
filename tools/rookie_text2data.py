@@ -13,13 +13,14 @@ class RookieText2dataTool(Tool):
     
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
         model_info= tool_parameters.get('model')
+        meta_data = tool_parameters.get('meta_data')
         # 获取连接参数
         _, conn_params = self._build_mysql_dsn(
             self.runtime.credentials['db_url'],
             self.runtime.credentials['db_password']
         )
         # 获取元数据
-        metadata = self._get_metadata(conn_params)
+        # metadata = self._get_metadata(conn_params)
 
         response = self.session.model.llm.invoke(
             model_config=LLMModelConfig(
@@ -33,7 +34,7 @@ class RookieText2dataTool(Tool):
                     content=f"""你是一位资深数据库工程师兼SQL优化专家，拥有10年以上DBA经验。请根据提供的数据库元数据DDL和自然语言需求描述，生成符合企业级标准的优化SQL语句。
 
                             ## 系统要求：
-                            1. 必须严格嵌入提供的DDL元数据{metadata}，禁止使用任何未声明的表或字段
+                            1. 必须严格嵌入提供的DDL元数据{meta_data}，禁止使用任何未声明的表或字段
                             2. 仅返回SELECT语句，禁止包含INSERT/UPDATE/DELETE等DML操作
                             3. 必须使用LIMIT语句进行结果限制，防止数据泄露风险
                             5. 如果用户提出了具体的数据数量，则Limit用户的查询数量，否则Limit 100
