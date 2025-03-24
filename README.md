@@ -39,17 +39,18 @@ Compatible with ​all non-deep-thinking models
 #### SQL Generation Component
 1. Import the rookie_text2data plugin
 2. Configure basic parameters:
-| Parameter     | Type     | Required | Description                              | Multilingual Support     |
-|---------------|----------|----------|------------------------------------------|--------------------------|
-| db_type       | select   | Yes      | Database type (MySQL/PostgreSQL)         | CN/EN/PT                |
-| host          | string   | Yes      | Database host/IP address                 | CN/EN/PT                |
-| port          | number   | Yes      | Database port (1-65535)                  | CN/EN/PT                |
-| db_name       | string   | Yes      | Target database name                     | CN/EN/PT                |
-| table_name    | string   | No       | Comma-separated table names (empty for all tables) | CN (format hints) |
-| username      | string   | Yes      | Database username                        | CN/EN/PT                |
-| password      | secret-input | Yes | Database password                     | CN/EN/PT                |
-| model         | model-selector | Yes | LLM model configuration               | CN/EN/PT                |
-| query         | string   | Yes      | Natural language query statement        | CN/EN/PT                |
+
+| Parameter      | Type           | Required | Description                                       | Multilingual Support     |
+|----------------|----------------|----------|---------------------------------------------------|--------------------------|
+| db_type        | select         | Yes      | Database type (MySQL/PostgreSQL)                  | CN/EN/PT                |
+| host           | string         | Yes      | Database host/IP address                          | CN/EN/PT                |
+| port           | number         | Yes      | Database port (1-65535)                           | CN/EN/PT                |
+| db_name        | string         | Yes      | Target database name                              | CN/EN/PT                |
+| table_name     | string         | No       | Comma-separated table names (empty for all tables)| CN (format hints)       |
+| username       | string         | Yes      | Database username                                 | CN/EN/PT                |
+| password       | secret-input   | Yes      | Database password                                 | CN/EN/PT                |
+| model          | model-selector | Yes      | LLM model configuration                           | CN/EN/PT                |
+| query          | string         | Yes      | Natural language query statement                  | CN/EN/PT                |
 
 3. Select Model，We recommend using the Qwen-max model. Other models can be tested but deep-thinking models are unsupported.
 4. Generate SQL queries using natural language
@@ -57,6 +58,7 @@ Compatible with ​all non-deep-thinking models
 #### SQL Execution Component
 1. Import the rookie_execute_sql plugin
 2. Configure basic parameters:
+
 | Parameter     | Type     | Required | Description                              | Multilingual Support     |
 |---------------|----------|----------|------------------------------------------|--------------------------|
 | db_type       | select   | Yes      | Database type (MySQL/PostgreSQL)         | CN/EN/PT                |
@@ -64,4 +66,5 @@ Compatible with ​all non-deep-thinking models
 | port          | number   | Yes      | Database port (1-65535)                  | CN/EN/PT                |
 | db_name       | string   | Yes      | Target database name                     | CN/EN/PT                |
 | sql           | string   | Yes      | SQL query to execute                     | CN/EN/PT                |
+
 3. Click "Execute" to run the SQL statement
