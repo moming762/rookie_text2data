@@ -30,12 +30,9 @@ parameters:
           en_US: MySQL
         value: mysql
       - label:
-          en_US: Oracle
-        value: oracle
-      - label:
-          en_US: SQLServer
-        value: sqlserver
-  - name: ip/host
+          en_US: PostgreSQL
+        value: pgsql
+  - name: host
     type: string
     required: true
     form: form

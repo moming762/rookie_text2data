@@ -1,63 +1,81 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from typing import Any
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 
-class AlchemyDBClient:
-    """基于SQLAlchemy的统一数据库客户端"""
+def get_db_schema(
+        db_type: str,
+        host: str,
+        port: int,
+        database: str,
+        username: str,
+        password: str,
+        table_names: str | None = None
+) -> dict[str, Any] | None:
+    result: dict[str, Any] = {}
+
+    driver = {
+        'mysql': 'pymysql',
+        'oracle': 'cx_oracle',
+        'sqlserver': 'pymssql',
+        'postgresql': 'psycopg2'
+    }.get(db_type.lower(), '')
     
-    # 数据库URL模式映射
-    URL_PATTERNS = {
-        'mysql': 'mysql+pymysql://{user}:{password}@{host}:{port}/{database}',
-        'sqlserver': 'mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver=ODBC+Driver+17+for+SQL+Server',
-        'pgsql': 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
-    }
+    engine = create_engine(f'{db_type.lower()}+{driver}://{username}:{password}@{host}:{port}/{database}')
+    inspector = inspect(engine)
 
-    def __init__(self, db_type: str, 
-                 host: str, port: int, 
-                 db_name: str, user: str, 
-                 password: str, 
-                 pool_size: int = 5):
-        """
-        初始化数据库客户端
-        :param db_type: 数据库类型(mysql/sqlserver/pgsql)
-        :param pool_size: 连接池大小(默认5)
-        """
-        if db_type not in self.URL_PATTERNS:
-            raise ValueError(f"Unsupported database type: {db_type}")
+    # 字段注释查询语句
+    column_comment_sql = {
+        'mysql': f"SELECT COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '{database}' AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name",
+        'oracle': "SELECT COMMENTS FROM ALL_COL_COMMENTS WHERE TABLE_NAME = :table_name AND COLUMN_NAME = :column_name",
+        'sqlserver': "SELECT CAST(ep.value AS NVARCHAR(MAX)) FROM sys.columns c LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id WHERE OBJECT_NAME(c.object_id) = :table_name AND c.name = :column_name",
+        'postgresql': "SELECT col_description(:table_name::regclass, ordinal_position) FROM information_schema.columns WHERE table_name = :table_name AND column_name = :column_name"
+    }.get(db_type.lower(), "")
 
-        self.engine = create_engine(
-            self.URL_PATTERNS[db_type].format(
-                user=user,
-                password=password,
-                host=host,
-                port=port,
-                database=db_name
-            ),
-            pool_size=pool_size,
-            pool_recycle=3600,
-            echo_pool=False
-        )
-        
-        self.Session = scoped_session(sessionmaker(bind=self.engine))
+    try:
+        all_tables = inspector.get_table_names()
+        target_tables = all_tables
+        if table_names:
+            target_tables = [t.strip() for t in table_names.split(',') if t.strip() in all_tables]
 
-    def get_session(self):
-        """获取线程安全的Session"""
-        return self.Session()
+        for table_name in target_tables:
+            # 修复点1：处理表注释返回值
+            try:
+                comment_data = inspector.get_table_comment(table_name)
+                # 处理不同返回类型：字符串或字典
+                table_comment = comment_data.get("text") if isinstance(comment_data, dict) else str(comment_data)
+            except Exception as e:
+                table_comment = f"Error getting comment: {str(e)}"
 
-    def execute_query(self, sql: str, params: dict = None):
-        """执行查询语句"""
-        with self.engine.connect() as conn:
-            result = conn.execute(sql, params or {})
-            return result.fetchall()
+            # 确保columns初始化为列表
+            table_info = {
+                'comment': table_comment,
+                'columns': []  # 明确初始化为列表
+            }
 
-    def execute_update(self, sql: str, params: dict = None):
-        """执行更新语句"""
-        session = self.get_session()
-        try:
-            result = session.execute(sql, params or {})
-            session.commit()
-            return result.rowcount
-        except Exception as e:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+            # 修复点2：添加列信息收集逻辑
+            for column in inspector.get_columns(table_name):
+                column_comment = ""
+                try:
+                    with engine.connect() as conn:
+                        stmt = text(column_comment_sql)
+                        res = conn.execute(stmt, {'table_name': table_name, 'column_name': column['name']})
+                        column_comment = res.scalar() or ""
+                except Exception as e:
+                    column_comment = f"Error getting column comment: {str(e)}"
+
+                # 安全添加列信息
+                table_info['columns'].append({
+                    'name': column['name'],
+                    'type': str(column['type']),
+                    'comment': column_comment,
+                    'nullable': column.get('nullable', False),
+                    'default': str(column.get('default', ''))
+                })
+
+            result[table_name] = table_info
+
+        return result
+    except SQLAlchemyError as e:
+        raise ValueError(f"Database error: {str(e)}")
+    finally:
+        engine.dispose()
