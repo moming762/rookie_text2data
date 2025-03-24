@@ -31,7 +31,7 @@ parameters:
         value: mysql
       - label:
           en_US: PostgreSQL
-        value: pgsql
+        value: postgresql
   - name: host
     type: string
     required: true
