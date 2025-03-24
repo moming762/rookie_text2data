@@ -12,6 +12,7 @@ identity:
   icon: data-collection.svg
 tools:
   - tools/rookie_text2data.yaml
+  - tools/rookie_excute_sql.yaml
 extra:
   python:
     source: provider/rookie_text2data.py

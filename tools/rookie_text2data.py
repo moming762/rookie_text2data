@@ -96,5 +96,17 @@ class RookieText2dataTool(Tool):
         )
 
         excute_sql = response.message.content
+        print("excute sql: {}",excute_sql)
+        yield self.create_json_message({
+            "status": "success",
+            "sql": self._extract_sql_from_text(excute_sql)
+        })
 
-        yield self.create_text_message(excute_sql)
+    def _extract_sql_from_text(self, text: str) -> str:
+        """提取 ``的```sql...```代码块中的SQL内容（若存在）"""
+        import re
+        pattern = r'```sql\s*(.*?)\s*```'
+        match = re.search(pattern, text, flags=re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return ""
