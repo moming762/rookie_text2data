@@ -1,3 +1,4 @@
+from cmath import e
 from collections.abc import Generator
 from typing import Any
 from dify_plugin import Tool
@@ -18,6 +19,7 @@ class RookieText2dataTool(Tool):
             username=tool_parameters['username'],
             password=tool_parameters['password'],
         )
+        print("model_info: {}",model_info)
         response = self.session.model.llm.invoke(
             model_config=LLMModelConfig(
                 provider=model_info.get('provider'),
@@ -97,10 +99,7 @@ class RookieText2dataTool(Tool):
 
         excute_sql = response.message.content
         print("excute sql: {}",excute_sql)
-        yield self.create_json_message({
-            "status": "success",
-            "sql": self._extract_sql_from_text(excute_sql)
-        })
+        yield self.create_text_message(self._extract_sql_from_text(excute_sql))
 
     def _extract_sql_from_text(self, text: str) -> str:
         """提取 ``的```sql...```代码块中的SQL内容（若存在）"""
