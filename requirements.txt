@@ -1,4 +1,8 @@
 dify_plugin~=0.0.1b67
-pymysql~=1.1.0
-pymysql[cryptography] >= 1.1.0
-cryptography~=44.0.2
+# SQLAlchemy方案核心依赖
+SQLAlchemy==1.4.46
+
+# 按需选择驱动
+pymysql==1.1.0          # MySQL
+pymssql==2.2.7          # SQL Server
+psycopg2-binary==2.9.9  # PostgreSQL

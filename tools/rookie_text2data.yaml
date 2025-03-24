@@ -12,6 +12,109 @@ description:
     pt_BR: Fetching data from the database using natural language.
   llm: Fetching data from the database using natural language.
 parameters:
+  - name: db_type
+    type: select
+    required: true
+    form: form
+    label:
+      en_US: Database type
+      zh_Hans: 数据库类型
+      pt_BR: Database type
+    human_description:
+      en_US: Database type
+      zh_Hans: 数据库类型
+      pt_BR: Database type
+    llm_description: Database type
+    options:
+      - label:
+          en_US: MySQL
+        value: mysql
+      - label:
+          en_US: Oracle
+        value: oracle
+      - label:
+          en_US: SQLServer
+        value: sqlserver
+  - name: ip/host
+    type: string
+    required: true
+    form: form
+    label:
+      en_US: Database ip/host
+      zh_Hans: 数据库IP/域名
+      pt_BR: Database ip/host
+    human_description:
+      en_US: Database ip/host
+      zh_Hans: 数据库IP/域名
+      pt_BR: Database ip/host
+    llm_description: Database ip/host
+  - name: port
+    type: number
+    required: true
+    form: form
+    min: 1
+    max: 65535
+    label:
+      en_US: Database port
+      zh_Hans: 数据库端口
+      pt_BR: Database port
+    human_description:
+      en_US: Database port
+      zh_Hans: 数据库端口
+      pt_BR: Database port
+    llm_description: Database port
+  - name: db_name
+    type: string
+    required: true
+    form: form
+    label:
+      en_US: Database name
+      zh_Hans: 数据库名称
+      pt_BR: Database name
+    human_description:
+      en_US: Database name
+      zh_Hans: 数据库名称
+      pt_BR: Database name
+    llm_description: Database name
+  - name: table_name
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Table name
+      zh_Hans: 表名, 用英文逗号分隔多个表名,留空则查询所有表
+      pt_BR: Table name
+    human_description:
+      en_US: Table name
+      zh_Hans: 表名，用英文逗号分隔多个表名，留空则查询所有表
+      pt_BR: Table name
+    llm_description: Table name
+  - name: username
+    type: string
+    required: true
+    form: form
+    label:
+      en_US: Username
+      zh_Hans: 用户名
+      pt_BR: Username
+    human_description:
+      en_US: Username
+      zh_Hans: 用户名
+      pt_BR: Username
+    llm_description: Username
+  - name: password
+    type: secret-input
+    required: true
+    form: form
+    label:
+      en_US: Password
+      zh_Hans: 密码
+      pt_BR: Password
+    human_description:
+      en_US: Password
+      zh_Hans: 密码
+      pt_BR: Password
+    llm_description: Password
   - name: model # the name of the model parameter
     type: model-selector # model-type
     scope: llm # the scope of the parameter
@@ -26,19 +129,6 @@ parameters:
       zh_Hans: LLM model for text2data.
       pt_BR: LLM model for text2data.
     llm_description: LLM model for text2data.
-  - name: meta_data
-    type: text
-    required: true
-    label:
-      en_US: database metadata
-      zh_Hans: 数据库元数据
-      pt_BR: database metadata
-    human_description:
-      en_US: database metadata
-      zh_Hans: database metadata
-      pt_BR: database metadata
-    llm_description: Fetching data from the database using natural language.
-    form: llm
   - name: query
     type: string
     required: true
