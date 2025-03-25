@@ -1,27 +1,25 @@
+from cmath import e
 from collections.abc import Generator
 from typing import Any
-from urllib.parse import urlparse, urlunparse, quote, unquote
-import pymysql
 from dify_plugin import Tool
+from dify_plugin.entities.tool import ToolInvokeMessage
+from utils.alchemy_db_client import get_db_schema
 from dify_plugin.entities.model.llm import LLMModelConfig
 from dify_plugin.entities.tool import ToolInvokeMessage
 from dify_plugin.entities.model.message import SystemPromptMessage, UserPromptMessage
-from pymysql.cursors import DictCursor
-import re
 
 class RookieText2dataTool(Tool):
-    
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
         model_info= tool_parameters.get('model')
-        meta_data = tool_parameters.get('meta_data')
-        # 获取连接参数
-        _, conn_params = self._build_mysql_dsn(
-            self.runtime.credentials['db_url'],
-            self.runtime.credentials['db_password']
+        meta_data = get_db_schema(
+            db_type=tool_parameters['db_type'],
+            host=tool_parameters['host'],
+            port=tool_parameters['port'],
+            database=tool_parameters['db_name'],
+            username=tool_parameters['username'],
+            password=tool_parameters['password'],
+            table_names=tool_parameters['table_names']
         )
-        # 获取元数据
-        # metadata = self._get_metadata(conn_params)
-
         response = self.session.model.llm.invoke(
             model_config=LLMModelConfig(
                 provider=model_info.get('provider'),
@@ -31,19 +29,28 @@ class RookieText2dataTool(Tool):
             ),
             prompt_messages=[
                 SystemPromptMessage(
-                    content=f"""你是一位资深数据库工程师兼SQL优化专家，拥有10年以上DBA经验。请根据提供的数据库元数据DDL和自然语言需求描述，生成符合企业级标准的优化SQL语句。
+                    content=f"""你是一位资深数据库工程师兼SQL优化专家，拥有10年以上DBA经验。请根据用户的数据库类型，以及提供的数据库元数据DDL和自然语言需求描述，生成符合企业级标准的优化SQL语句。
 
                             ## 系统要求：
                             1. 必须严格嵌入提供的DDL元数据{meta_data}，禁止使用任何未声明的表或字段
                             2. 仅返回SELECT语句，禁止包含INSERT/UPDATE/DELETE等DML操作
                             3. 必须使用LIMIT语句进行结果限制，防止数据泄露风险
-                            5. 如果用户提出了具体的数据数量，则Limit用户的查询数量，否则Limit 100
-                            4. 所有字段必须使用反引号包裹，符合MySQL标识符规范
+                            4. 如果用户提出了具体的数据数量，则Limit用户的查询数量，否则Limit 100
+                                - MySQL使用`LIMIT n`语法
+                                - Oracle使用`ROWNUM <= n`语法
+                                - SQL Server使用`TOP n`语法
+                                - PostgreSQL使用`FETCH FIRST n ROWS ONLY`语法  
+                            5. 所有字段符合对应数据库类型标识符规范
 
                             ## 优化原则：
                             1. 采用覆盖索引策略，确保查询命中至少2个索引
+                                - MySQL采用覆盖索引（Covering Index）
+                                - Oracle采用索引组织表（Index Organized Table）
+                                - PostgreSQL采用INCLUDE索引（覆盖列） 
                             2. 避免SELECT *，仅返回需求中的必要字段
                             3. 对日期字段使用CURDATE()等函数时需标注时间范围
+                                - MySQL使用`CURDATE()`/`NOW()`
+                                - PostgreSQL使用`CURRENT_DATE`/`CURRENT_TIMESTAMP`
                             4. 多表关联必须使用INNER JOIN，禁止LEFT/RIGHT JOIN
 
                             ## 验证机制：
@@ -54,250 +61,64 @@ class RookieText2dataTool(Tool):
                             5. 禁止使用任何转义字符（如''或\"）
                             6. 禁止在开头和结尾使用``` ```包裹SQL语句
 
-                            ## 输出规范：
-                                SELECT 
-                                    `order_id` AS 订单编号,
-                                    `amount` * 1.05 AS 含税金额
-                                FROM 
-                                    `orders` o
-                                INNER JOIN 
-                                    `customers` c ON o.customer_id = c.id
-                                WHERE 
-                                    o.status = 'paid' 
-                                    AND c.region = 'Asia'
-                                    AND o.created_at BETWEEN '2025-01-01' AND CURDATE()
-                                LIMIT 100;
-                    """
+                            ## 输出示例（MySQL）：
+                            SELECT 
+                                `order_id` AS 订单编号,
+                                `amount` * 1.05 AS 含税金额  
+                            FROM 
+                                `orders` o
+                            INNER JOIN 
+                                `customers` c ON o.`customer_id` = c.`id`  
+                            WHERE 
+                                o.`status` = 'paid' 
+                                AND c.`region` = 'Asia'
+                                AND o.`created_at` BETWEEN '2025-01-01' AND CURDATE()
+                            LIMIT 100;
+
+                            ## 输出示例（PostgreSQL）：
+                            SELECT 
+                                "order_id" AS 订单编号,
+                                "amount" * 1.05 AS 含税金额  
+                            FROM 
+                                "orders" o
+                            INNER JOIN 
+                                "customers" c ON o."customer_id" = c."id"  
+                            WHERE 
+                                o."status" = 'paid' 
+                                AND c."region" = 'Asia'
+                                AND o."created_at" BETWEEN '2025-01-01' AND CURRENT_DATE
+                            FETCH FIRST 100 ROWS ONLY;
+                         """
                 ),
                 UserPromptMessage(
-                    content=f"用户想要查询的数据需求为：{tool_parameters.get('query')}"
-                    
+                    content=f"用户的数据库类型为：{tool_parameters.get('db_type')}, 用户想要查询的数据需求为：{tool_parameters.get('query')}"
                 )
             ],
             stream=False
         )
-
         excute_sql = response.message.content
-
-        # 执行SQL
-        result = self._execute_sql_generator(excute_sql, conn_params)
-
-        yield self.create_json_message({
-            "status": "success",
-            "data": result
-        })
-
-    def _build_mysql_dsn(self, db_url: str, db_password: str) -> tuple[str, dict[str, Any]]:
-        """
-        将数据库URL和密码拼接为完整DSN，并返回解析后的连接参数
-        
-        参数：
-            db_url (str): 格式示例 mysql://user@host:port/database
-            db_password (str): 数据库密码（明文）
-        
-        返回：
-            tuple: (完整DSN, 解析后的连接参数字典)
-        
-        异常：
-            ValueError: 当URL格式无效时抛出
-        """
-        # 基础解析验证
-        parsed = urlparse(db_url)
-        if parsed.scheme != 'mysql':
-            raise ValueError("仅支持mysql协议，当前协议：{}".format(parsed.scheme))
-
-        # 解析用户名和主机信息
-        username = parsed.username or 'root'
-        password = quote(db_password, safe='')  # 处理特殊字符
-        hostname = parsed.hostname or 'localhost'
-        port = parsed.port or 3306
-
-        # 处理数据库路径
-        database = parsed.path.lstrip('/')
-        if not database:
-            database = 'test'
-
-        # 构建新的netloc
-        auth_part = f"{username}:{password}"
-        netloc = f"{auth_part}@{hostname}"
-        if parsed.port:
-            netloc += f":{port}"
-
-        # 生成完整DSN
-        full_dsn = urlunparse((
-            parsed.scheme,
-            netloc,
-            parsed.path,
-            parsed.params,
-            parsed.query,
-            parsed.fragment
-        ))
-
-        # 生成连接参数字典（类型安全）
-        connection_params = {
-            'host': hostname,
-            'port': port,
-            'user': unquote(username),
-            'password': unquote(db_password),  # 注意这里返回明文用于连接
-            'database': database,
-            'charset': 'utf8mb4',
-            'connect_timeout': 5
-        }
-
-        return full_dsn, connection_params
-
-    def _get_metadata(self, conn_params: dict[str, Any]) -> dict[str, Any]:
-        """
-        获取数据库元数据（表结构信息）
-        
-        返回结构示例：
-        {
-            "tables": [
-                {
-                    "name": "users",
-                    "columns": [
-                        {"name": "id", "type": "int", "comment": "主键ID"},
-                        {"name": "name", "type": "varchar(255)", "comment": "用户名"}
-                    ]
-                }
-            ]
-        }
-        """
-        metadata = {"tables": []}
-        
-        try:
-            with pymysql.connect(
-                host=conn_params['host'],
-                port=conn_params['port'],
-                user=conn_params['user'],
-                password=conn_params['password'],
-                database=conn_params['database'],
-                charset=conn_params['charset'],
-                cursorclass=DictCursor
-            ) as conn:
-                with conn.cursor() as cursor:
-                    # 获取所有表信息
-                    cursor.execute("""
-                        SELECT TABLE_NAME AS table_name,
-                        TABLE_COMMENT AS table_comment
-                        FROM INFORMATION_SCHEMA.TABLES
-                        WHERE TABLE_SCHEMA = DATABASE()
-                        AND TABLE_TYPE = 'BASE TABLE'
-                    """)
-                    tables = cursor.fetchall()
-
-                    # 获取每个表的列信息
-                    for table in tables:
-                        cursor.execute("""
-                            SELECT COLUMN_NAME AS name,
-                                COLUMN_TYPE AS type,
-                                COLUMN_COMMENT AS comment,
-                                IS_NULLABLE AS nullable,
-                                COLUMN_KEY AS key_type
-                            FROM INFORMATION_SCHEMA.COLUMNS
-                            WHERE TABLE_SCHEMA = DATABASE()
-                            AND TABLE_NAME = %s
-                            ORDER BY ORDINAL_POSITION
-                        """, (table['table_name'],))
-                        
-                        columns = []
-                        for col in cursor.fetchall():
-                            columns.append({
-                                "name": col['name'],
-                                "type": col['type'],
-                                "comment": col['comment'] or "",
-                                "nullable": col['nullable'] == 'YES',
-                                "primary_key": col['key_type'] == 'PRI'
-                            })
-                        
-                        metadata['tables'].append({
-                            "name": table['table_name'],
-                            "comment": table['table_comment'] or "",
-                            "columns": columns
-                        })
-        
-        except pymysql.Error as e:
-            code, msg = e.args
-            error_map = {
-                1142: ("权限不足，无法访问元数据表", 403),
-                1045: ("数据库认证失败", 401),
-                2003: ("无法连接数据库服务器", 503)
-            }
-            error_info = error_map.get(code, (f"数据库错误: {msg}", 500))
-            raise RuntimeError(f"{error_info[0]} (错误码: {code})") from e
-            
-        return metadata
-    
-    def _execute_sql_generator(self,sql: str, conn_params: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
-        """
-        基于PyMySQL的SQL执行生成器函数
-        :param sql: 待执行的SQL语句
-        :param conn_params: 数据库连接参数字典
-        :yield: 返回包含执行状态和数据的字典
-        """
-        extracted_sql = self._extract_sql_from_text(sql)
-        if not extracted_sql:
-            # 如果无法提取（未匹配到代码块），直接使用原始字符串
-            processed_sql = sql.strip()
+        if (isinstance(excute_sql, str)):
+            yield self.create_text_message(self._extract_sql_from_text(excute_sql))
         else:
-            processed_sql = extracted_sql
-        
-        connection = None
-        try:
-            # 建立数据库连接
-            connection = pymysql.connect(
-                host=conn_params['host'],
-                user=conn_params['user'],
-                password=conn_params['password'],
-                database=conn_params['database'],
-                charset='utf8mb4',  # 必须指定字符集
-                cursorclass=DictCursor  # 返回字典类型结果
-            )
-            with connection.cursor() as cursor:
-                # 执行SQL语句
-                cursor.execute(processed_sql)
-                
-                # 获取列名和数据（引用[2,5](@ref)）
-                columns = [desc[0] for desc in cursor.description]
-                results = cursor.fetchall()
-                
-                # 生成结果集
-                yield {
-                    "status": "success",
-                    "sql": processed_sql,
-                    "columns": columns,
-                    "data": results
-                }
-                
-        except pymysql.MySQLError as e:
-            # 捕获数据库特定错误
-            yield {
-                "status": "error",
-                "excute_sql": processed_sql,
-                "message": f"Database error: {str(e)}"
-            }
-        except Exception as ex:
-            # 捕获其他异常
-            yield {
-                "status": "error",
-                "excute_sql": processed_sql,
-                "message": f"Execution error: {str(ex)}"
-            }
-        finally:
-            # 资源释放
-            if connection and connection.open:
-                connection.close()
-                yield {
-                    "status": "info",
-                    "message": "数据库连接已关闭"
-                }
-
-
+            yield self.create_text_message("生成失败，请检查输入参数是否正确")
 
     def _extract_sql_from_text(self, text: str) -> str:
-        """提取 ``的```sql...```代码块中的SQL内容（若存在）"""
-        pattern = r'```sql\s*(.*?)\s*```'
-        match = re.search(pattern, text, flags=re.DOTALL)
-        if match:
-            return match.group(1).strip()
-        return ""
+        import re
+        """智能提取SQL内容（兼容有无代码块包裹的情况）"""
+        # 匹配被代码块包裹的情况
+        code_block_pattern = r'(?s)```sql(.*?)```'
+        code_match = re.search(code_block_pattern, text)
+        if code_match:
+            return code_match.group(1).strip()
+        
+        # 匹配未被包裹的纯SQL
+        sql_pattern = r'(?si)^\s*((?:SELECT|INSERT|UPDATE|DELETE|WITH|CREATE|ALTER|DROP).+?)(;|$|\n\s*$)'
+        sql_match = re.search(sql_pattern, text, re.DOTALL)
+        if sql_match:
+            # 去除末尾可能存在的非语句结束符
+            sql = sql_match.group(1).rstrip(';').strip()
+            return f"{sql};" if sql_match.group(2) == ';' else sql
+        
+        # 兜底处理：返回原始文本中类似SQL的部分
+        clean_text = re.sub(r'[\n\r\t]+', ' ', text).strip()
+        return clean_text if any(kw in clean_text.upper() for kw in ['SELECT', 'FROM', 'WHERE']) else ""

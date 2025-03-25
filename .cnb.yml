@@ -1,4 +1,4 @@
-main:
+$:
   push:
     - services:
         - docker
@@ -13,4 +13,4 @@ main:
             auth_type: https
             username: $GIT_USERNAME
             password: $EUMENIDES_TOKEN
-            branch: main
+            branch: $CNB_BRANCH
