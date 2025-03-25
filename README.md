@@ -1,45 +1,70 @@
 ## rookie_text2data
 
 **Author:** jaguarliuu
-**Version:** 0.0.1
+**Version:** 0.1.0
 **Type:** tool
 
 ### Description
-大语言模型加持的自然语言转SQL插件，支持无缝链接数据库，实现零代码 SQL 查询。
+A tool that converts natural language into secure and optimized SQL queries, supporting both MySQL and PostgreSQL databases.
 
 
 ### 声明
-承蒙厚爱，没有想到一个偶然的想法和基础实践受到这么多人的关注，在此表示感谢！
-会积极完善插件，欢迎大家提出宝贵意见！
+We are truly grateful for the overwhelming interest in this experimental project. Your feedback is invaluable for improving this plugin. Join our WeChat group for discussions and collaboration opportunities!
 
-为方便交流，搞个交流群，大家一起交流学习！
+![WeChat](./_assets/1.png)
 
+### ✨ Core Features
 
-![微信](./_assets/1.png)
+#### ​Multi-Database Support
+- Native support for MySQL and PostgreSQL syntax differences
+- Automatic SQL syntax adaptation based on database type (e.g., LIMIT vs FETCH FIRST)
+#### ​Security Mechanisms
+- Mandatory result set limits (default LIMIT 100)
+- DML operation prohibition (SELECT statements only)
+- Field whitelist validation (based on database metadata)
+- Least privilege principle for query execution
 
+### Supported Databases
+MySQL
+PostgreSQL
 
-### 数据库支持
-- MySQL
-
-### 大模型支持
-
-> 理论上，支持所有**非深度思考**大模型
-
+### Supported LLMs
+Compatible with ​all non-deep-thinking models
 - ChatGLM-6B
 - DeepSeek V3
 - Qwen-max
-- ...
+...
 
-### 快速开始
-1. 安装插件
-2. 授权数据库地址
+### Quick Start
+#### SQL Generation Component
+1. Import the rookie_text2data plugin
+2. Configure basic parameters:
 
-> 数据库地址务必为可用可连接地址！
+| Parameter      | Type           | Required | Description                                       | Multilingual Support     |
+|----------------|----------------|----------|---------------------------------------------------|--------------------------|
+| db_type        | select         | Yes      | Database type (MySQL/PostgreSQL)                  | CN/EN/PT                |
+| host           | string         | Yes      | Database host/IP address                          | CN/EN/PT                |
+| port           | number         | Yes      | Database port (1-65535)                           | CN/EN/PT                |
+| db_name        | string         | Yes      | Target database name                              | CN/EN/PT                |
+| table_name     | string         | No       | Comma-separated table names (empty for all tables)| CN (format hints)       |
+| username       | string         | Yes      | Database username                                 | CN/EN/PT                |
+| password       | secret-input   | Yes      | Database password                                 | CN/EN/PT                |
+| model          | model-selector | Yes      | LLM model configuration                           | CN/EN/PT                |
+| query          | string         | Yes      | Natural language query statement                  | CN/EN/PT                |
 
-![alt text](_assets/image.png)
+3. Select Model，We recommend using the Qwen-max model. Other models can be tested but deep-thinking models are unsupported.
+4. Generate SQL queries using natural language
 
+#### SQL Execution Component
+1. Import the rookie_execute_sql plugin
+2. Configure basic parameters:
 
-3. 在引用中引入
-4. 选择模型（Chat 模型即可）
-5. 自然语言查询 SQL
+| Parameter     | Type     | Required | Description                              | Multilingual Support     |
+|---------------|----------|----------|------------------------------------------|--------------------------|
+| db_type       | select   | Yes      | Database type (MySQL/PostgreSQL)         | CN/EN/PT                |
+| host          | string   | Yes      | Database host/IP address                 | CN/EN/PT                |
+| port          | number   | Yes      | Database port (1-65535)                  | CN/EN/PT                |
+| db_name       | string   | Yes      | Target database name                     | CN/EN/PT                |
+| sql           | string   | Yes      | SQL query to execute                     | CN/EN/PT                |
 
+3. Click "Execute" to run the SQL statement
