@@ -19,8 +19,8 @@ class RookieText2dataTool(Tool):
             database=tool_parameters['db_name'],
             username=tool_parameters['username'],
             password=tool_parameters['password'],
+            table_names=tool_parameters['table_names']
         )
-        logging.info(f"Found {len(meta_data)} tables: {', '.join(meta_data.keys())}")
         response = self.session.model.llm.invoke(
             model_config=LLMModelConfig(
                 provider=model_info.get('provider'),
@@ -97,16 +97,29 @@ class RookieText2dataTool(Tool):
             ],
             stream=False
         )
-
         excute_sql = response.message.content
-        logging.info(f"Generated SQL: {excute_sql}")
-        yield self.create_text_message(self._extract_sql_from_text(excute_sql))
+        if (isinstance(excute_sql, str)):
+            yield self.create_text_message(self._extract_sql_from_text(excute_sql))
+        else:
+            yield self.create_text_message("生成失败，请检查输入参数是否正确")
 
     def _extract_sql_from_text(self, text: str) -> str:
-        """提取 ``的```sql...```代码块中的SQL内容（若存在）"""
         import re
-        pattern = r'```sql\s*(.*?)\s*```'
-        match = re.search(pattern, text, flags=re.DOTALL)
-        if match:
-            return match.group(1).strip()
-        return ""
+        """智能提取SQL内容（兼容有无代码块包裹的情况）"""
+        # 匹配被代码块包裹的情况
+        code_block_pattern = r'(?s)```sql(.*?)```'
+        code_match = re.search(code_block_pattern, text)
+        if code_match:
+            return code_match.group(1).strip()
+        
+        # 匹配未被包裹的纯SQL
+        sql_pattern = r'(?si)^\s*((?:SELECT|INSERT|UPDATE|DELETE|WITH|CREATE|ALTER|DROP).+?)(;|$|\n\s*$)'
+        sql_match = re.search(sql_pattern, text, re.DOTALL)
+        if sql_match:
+            # 去除末尾可能存在的非语句结束符
+            sql = sql_match.group(1).rstrip(';').strip()
+            return f"{sql};" if sql_match.group(2) == ';' else sql
+        
+        # 兜底处理：返回原始文本中类似SQL的部分
+        clean_text = re.sub(r'[\n\r\t]+', ' ', text).strip()
+        return clean_text if any(kw in clean_text.upper() for kw in ['SELECT', 'FROM', 'WHERE']) else ""

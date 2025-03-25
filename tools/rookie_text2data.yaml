@@ -73,19 +73,19 @@ parameters:
       zh_Hans: 数据库名称
       pt_BR: Database name
     llm_description: Database name
-  - name: table_name
+  - name: table_names
     type: string
     required: false
     form: form
     label:
-      en_US: Table name
-      zh_Hans: 表名, 用英文逗号分隔多个表名,留空则查询所有表
-      pt_BR: Table name
+      en_US: table_names
+      zh_Hans: 数据表名称
+      pt_BR: table_names
     human_description:
-      en_US: Table name
-      zh_Hans: 表名，用英文逗号分隔多个表名，留空则查询所有表
-      pt_BR: Table name
-    llm_description: Table name
+      en_US: table_names
+      zh_Hans: 数据表名称
+      pt_BR: table_names
+    llm_description: table_names
   - name: username
     type: string
     required: true
