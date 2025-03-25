@@ -33,7 +33,7 @@ class RookieText2dataTool(Tool):
         system_prompt = prompt_loader.get_prompt(
             db_type=tool_parameters['db_type'],
             context=context,
-            limit=tool_parameters['limit'],
+            limit=tool_parameters.get( 'limit', 100 ),
             user_custom_prompt=tool_parameters['custom_prompt']
         )
         print(f"系统提示词：\n{system_prompt}")
