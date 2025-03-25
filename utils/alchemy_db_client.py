@@ -1,6 +1,7 @@
 from typing import Any
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
+import logging
 
 def get_db_schema(
         db_type: str,
@@ -36,7 +37,7 @@ def get_db_schema(
         target_tables = all_tables
         if table_names:
             target_tables = [t.strip() for t in table_names.split(',') if t.strip() in all_tables]
-
+        logging.info(f"Found {len(target_tables)} tables: {', '.join(target_tables)}")
         for table_name in target_tables:
             # 修复点1：处理表注释返回值
             try:
@@ -70,9 +71,10 @@ def get_db_schema(
                     'nullable': column.get('nullable', False),
                     'default': str(column.get('default', ''))
                 })
+                
 
             result[table_name] = table_info
-
+        logging.info(f"Found {len(result)} tables: {', '.join(result.keys())}")
         return result
     except SQLAlchemyError as e:
         raise ValueError(f"Database error: {str(e)}")
