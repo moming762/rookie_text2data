@@ -34,7 +34,7 @@ class RookieText2dataTool(Tool):
             db_type=tool_parameters['db_type'],
             context=context,
             limit=tool_parameters.get( 'limit', 100 ),
-            user_custom_prompt=tool_parameters['custom_prompt']
+            user_custom_prompt=tool_parameters.get('custom_prompt', '')
         )
         print(f"系统提示词：\n{system_prompt}")
         response = self.session.model.llm.invoke(
@@ -80,3 +80,4 @@ class RookieText2dataTool(Tool):
         # 兜底处理：返回原始文本中类似SQL的部分
         clean_text = re.sub(r'[\n\r\t]+', ' ', text).strip()
         return clean_text if any(kw in clean_text.upper() for kw in ['SELECT', 'FROM', 'WHERE']) else ""
+    
