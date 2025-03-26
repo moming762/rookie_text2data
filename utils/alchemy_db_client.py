@@ -1,6 +1,7 @@
 from typing import Any
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
+from urllib.parse import quote_plus # 用于对URL进行编码
 
 def get_db_schema(
         db_type: str,
@@ -126,9 +127,12 @@ def execute_sql(
         'sqlserver': 'pymssql',
         'postgresql': 'psycopg2'
     }.get(db_type.lower(), '')
+
+    encoded_username = quote_plus(username)
+    encoded_password = quote_plus(password)
     
     # 创建数据库引擎
-    engine = create_engine(f'{db_type.lower()}+{driver}://{username}:{password}@{host}:{port}/{database}')
+    engine = create_engine(f'{db_type.lower()}+{driver}://{encoded_username}:{encoded_password}@{host}:{port}/{database}')
     
     try:
         # 使用 begin() 确保事务自动提交
