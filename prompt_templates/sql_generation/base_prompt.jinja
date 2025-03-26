@@ -18,3 +18,10 @@
 {% block validation_rules %}{% endblock %}
 
 {% block example_section %}{% endblock %}
+
+## 严格遵守
+1. 只返回生成的SQL语句，禁止返回任何其他信息
+2. 仅返回SELECT语句，禁止包含INSERT/UPDATE/DELETE等DML操作
+3. 去除返回结果里所有注释
+4. 去除返回结果里所有换行符
+5. 去除返回结果里所有markdown标签

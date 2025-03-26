@@ -3,6 +3,9 @@ from typing import Any
 from collections.abc import Generator
 from dify_plugin.entities.tool import ToolInvokeMessage
 from utils.alchemy_db_client import execute_sql
+import json
+from datetime import datetime, date
+from decimal import Decimal
 
 class RookieExcuteSqlTool(Tool):
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
@@ -32,11 +35,22 @@ class RookieExcuteSqlTool(Tool):
                 db_type, host, int(port), database, 
                 username, password, sql, ""
             )
-            yield self.create_json_message({
-                    "status": "success",
-                    "result": result
-                }  
-            )
+            if (tool_parameters['result_format'] == 'json'):
+                yield self.create_json_message({
+                        "status": "success",
+                        "result": result
+                    }  
+                )
+            else:
+                if result is not None:
+                    message_text = json.dumps(
+                        result, 
+                        ensure_ascii=False, 
+                        default=self._custom_serializer  # 关键修改点
+                    )
+                else:
+                    message_text = "No data found"
+                yield self.create_text_message(message_text)
         except Exception as e:
             raise ValueError(f"数据库操作失败：{str(e)}")
 
@@ -59,3 +73,12 @@ class RookieExcuteSqlTool(Tool):
                 if first_word in risk_keywords:
                     return True
         return False
+    
+    def _custom_serializer(self, obj: Any) -> Any:
+        """处理数据库常见不可序列化类型"""
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()  # 转换为 ISO8601 字符串
+        elif isinstance(obj, Decimal):
+            return float(obj)  # Decimal转浮点数
+        # 添加其他需要处理的类型（如 bytes）
+        raise TypeError(f"Unserializable type {type(obj)}")

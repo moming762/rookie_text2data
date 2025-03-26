@@ -56,7 +56,12 @@ class RookieText2dataTool(Tool):
         print(response)
         excute_sql = response.message.content
         if (isinstance(excute_sql, str)):
-            yield self.create_text_message(self._extract_sql_from_text(excute_sql))
+            if (tool_parameters['result_format'] == 'json'):
+                yield self.create_json_message({
+                    "excute_sql": excute_sql
+                })
+            else:
+                yield self.create_text_message(excute_sql)
         else:
             yield self.create_text_message("生成失败，请检查输入参数是否正确")
 
