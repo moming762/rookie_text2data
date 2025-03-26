@@ -112,6 +112,29 @@ parameters:
       pt_BR: Fetching data from the database using natural language.
     llm_description: Fetching data from the database using natural language.
     form: llm
+  - name: result_format
+    type: select
+    required: false
+    label:
+      en_US: result_format
+      zh_Hans: 返回数据格式
+      pt_BR: result_format
+    human_description:
+      en_US: result_format
+      zh_Hans: 返回数据格式
+      pt_BR: result_format
+    llm_description: result_format
+    form: form
+    default: json
+    options:
+      - label:
+          en_US: JSON
+          zh_Hans: JSON
+        value: json
+      - label:
+          en_US: TEXT
+          zh_Hans: TEXT
+        value: text
 extra:
   python:
     source: tools/rookie_excute_sql.py
