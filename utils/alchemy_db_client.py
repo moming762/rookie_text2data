@@ -32,7 +32,10 @@ def get_db_schema(
         'postgresql': 'psycopg2'
     }.get(db_type.lower(), '')
 
-    engine = create_engine(f'{db_type.lower()}+{driver}://{username}:{password}@{host}:{port}/{database}')
+    encoded_username = quote_plus(username)
+    encoded_password = quote_plus(password)
+
+    engine = create_engine(f'{db_type.lower()}+{driver}://{encoded_username}:{encoded_password}@{host}:{port}/{database}')
     inspector = inspect(engine)
 
     # 获取字段注释的SQL语句
