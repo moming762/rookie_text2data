@@ -6,6 +6,8 @@ from utils.alchemy_db_client import execute_sql
 import json
 from datetime import datetime, date
 from decimal import Decimal
+import csv
+from io import StringIO
 
 class RookieExcuteSqlTool(Tool):
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
@@ -35,12 +37,24 @@ class RookieExcuteSqlTool(Tool):
                 db_type, host, int(port), database, 
                 username, password, sql, ""
             )
-            if (tool_parameters['result_format'] == 'json'):
+            # 处理空结果
+            if isinstance(result, list) and not result:  # 空查询结果
+                yield self.create_text_message("No data found")
+            elif isinstance(result, dict) and "rowcount" in result and result["rowcount"] == 0:  # 无影响行数
+                yield self.create_text_message("No data affected")
+
+            result_format = tool_parameters.get("result_format", "json")
+            
+            if result_format == 'json':
                 yield self.create_json_message({
                         "status": "success",
                         "result": result
                     }  
                 )
+            elif result_format == 'csv':
+                yield from self._handle_csv(result)
+            elif result_format == 'html':
+                yield from self._handle_html(result)
             else:
                 if result is not None:
                     message_text = json.dumps(
@@ -53,6 +67,53 @@ class RookieExcuteSqlTool(Tool):
                 yield self.create_text_message(message_text)
         except Exception as e:
             raise ValueError(f"数据库操作失败：{str(e)}")
+
+    def _handle_html(self, data: list[dict[str, Any]] | dict[str, Any] | None) -> Generator[ToolInvokeMessage, None, None]:
+        """生成 HTML 表格消息"""
+        html_table = self._to_html_table(data)
+        yield self.create_blob_message(html_table.encode('utf-8'), meta={'mime_type': 'text/html', 'filename': 'result.html'})
+
+    def _handle_csv(self, data: list[dict[str, Any]] | dict[str, Any] | None) -> Generator[ToolInvokeMessage]:
+        """生成 CSV 文件消息"""
+        output = StringIO()
+        # 写入 BOM（仅前3个字节）
+        output.write('\ufeff')  # 添加 BOM
+        writer = csv.writer(output)
+        # 写入表头
+        writer.writerow(data[0].keys())
+        
+        # 写入数据行（处理日期序列化）
+        for row in data:
+            processed_row = [
+                self._custom_serializer(val) if isinstance(val, (date, datetime)) else val
+                for val in row.values()
+            ]
+            writer.writerow(processed_row)
+
+        # 注意：使用 utf-8-sig 编码会自动包含 BOM，推荐使用这种方式
+        yield self.create_blob_message(
+            output.getvalue().encode('utf-8-sig'),  # 关键修改点 ✅
+            meta={
+                'mime_type': 'text/csv',
+                'filename': 'result.csv',
+                'encoding': 'utf-8-sig'  # 显式声明编码
+            }
+        )
+    
+    def _to_html_table(self, data: list[dict]) -> str:
+        """生成标准 HTML 表格"""
+        html = ["<table border='1'>"]
+        html.append("<tr>" + "".join(f"<th>{col}</th>" for col in data[0].keys()) + "</tr>")
+        
+        for row in data:
+            html.append(
+                "<tr>" + 
+                "".join(f"<td>{self._custom_serializer(val)}</td>" for val in row.values()) + 
+                "</tr>"
+            )
+        
+        html.append("</table>")
+        return "".join(html)
 
     def _contains_risk_commands(self, sql: str) -> bool:
         import re
