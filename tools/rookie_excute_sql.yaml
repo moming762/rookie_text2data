@@ -135,6 +135,10 @@ parameters:
           en_US: TEXT
           zh_Hans: TEXT
         value: text
+      - label:
+          en_US: CSV
+          zh_Hans: CSV
+        value: csv
 extra:
   python:
     source: tools/rookie_excute_sql.py
