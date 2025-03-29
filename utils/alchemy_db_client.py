@@ -43,7 +43,13 @@ def get_db_schema(
         'mysql': f"SELECT COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '{database}' AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name",
         'oracle': "SELECT COMMENTS FROM ALL_COL_COMMENTS WHERE TABLE_NAME = :table_name AND COLUMN_NAME = :column_name",
         'sqlserver': "SELECT CAST(ep.value AS NVARCHAR(MAX)) FROM sys.columns c LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id WHERE OBJECT_NAME(c.object_id) = :table_name AND c.name = :column_name",
-        'postgresql': "SELECT col_description(:table_name::regclass, ordinal_position) FROM information_schema.columns WHERE table_name = :table_name AND column_name = :column_name"
+        'postgresql': """
+            SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int)
+            FROM pg_catalog.pg_class c
+            JOIN information_schema.columns cols
+            ON c.relname = cols.table_name
+            WHERE c.relname = :table_name AND cols.column_name = :column_name
+        """
     }.get(db_type.lower(), "")
 
     try:
@@ -82,7 +88,8 @@ def get_db_schema(
                             'column_name': column['name']
                         }).scalar() or ""
                 except SQLAlchemyError as e:
-                    raise ValueError(f"Failed to retrieve field metadata: {str(e)}")
+                    print(f"Warning: failed to get comment for {table_name}.{column['name']} - {e}")
+                    column_comment = ""
 
                 table_info['columns'].append({
                     'name': column['name'],
