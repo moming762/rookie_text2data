@@ -104,6 +104,48 @@ def get_db_schema(
     finally:
         engine.dispose()
 
+def format_schema_dsl(schema: dict[str, Any], with_type: bool = True) -> str:
+    """
+    将数据库表结构压缩为DSL格式
+    :param schema: get_db_schema 返回的结构
+    :param with_type: 是否保留字段类型
+    :return: 压缩后的 DSL 字符串
+    """
+    type_aliases = {
+        'INTEGER': 'i',
+        'INT': 'i',
+        'BIGINT': 'i',
+        'SMALLINT': 'i',
+        'TINYINT': 'i',
+        'VARCHAR': 's',
+        'TEXT': 's',
+        'CHAR': 's',
+        'DATETIME': 'dt',
+        'TIMESTAMP': 'dt',
+        'DATE': 'dt',
+        'DECIMAL': 'f',
+        'NUMERIC': 'f',
+        'FLOAT': 'f',
+        'DOUBLE': 'f',
+        'BOOLEAN': 'b',
+        'BOOL': 'b',
+        'JSON': 'j'
+    }
+
+    lines = []
+    for table_name, table_data in schema.items():
+        column_parts = []
+        for col in table_data['columns']:
+            if with_type:
+                # 获取原始类型，并尝试做类型简写
+                raw_type = col['type'].split('(')[0].upper()
+                col_type = type_aliases.get(raw_type, raw_type.lower())
+                column_parts.append(f"{col['name']}:{col_type}")
+            else:
+                column_parts.append(col['name'])
+        lines.append(f"T:{table_name}({', '.join(column_parts)})")
+    return "\n".join(lines)
+
 def execute_sql(
         db_type: str,
         host: str,
