@@ -114,7 +114,7 @@ parameters:
   - name: table_names
     type: string
     required: false
-    form: form
+    form: llm
     label:
       en_US: table_names
       zh_Hans: 数据表名称
