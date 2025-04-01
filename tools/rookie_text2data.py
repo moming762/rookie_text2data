@@ -9,6 +9,7 @@ from dify_plugin.entities.tool import ToolInvokeMessage
 from dify_plugin.entities.model.message import SystemPromptMessage, UserPromptMessage
 
 from utils.prompt_loader import PromptLoader
+from utils.alchemy_db_client import format_schema_dsl
 
 class RookieText2dataTool(Tool):
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
@@ -22,12 +23,14 @@ class RookieText2dataTool(Tool):
             password=tool_parameters['password'],
             table_names=tool_parameters['table_names']
         )
-        # 初始化模板加载器
+        dsl_text = format_schema_dsl(meta_data, with_type=True)
+        print(dsl_text)
+        # 初始化模板加载器s
         prompt_loader = PromptLoader()
         # 构建模板上下文
         context = {
             'db_type': tool_parameters['db_type'].upper(),
-            'meta_data': meta_data
+            'meta_data': dsl_text
         }
         # 加载动态提示词
         system_prompt = prompt_loader.get_prompt(

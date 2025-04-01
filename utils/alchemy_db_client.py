@@ -43,7 +43,13 @@ def get_db_schema(
         'mysql': f"SELECT COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '{database}' AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name",
         'oracle': "SELECT COMMENTS FROM ALL_COL_COMMENTS WHERE TABLE_NAME = :table_name AND COLUMN_NAME = :column_name",
         'sqlserver': "SELECT CAST(ep.value AS NVARCHAR(MAX)) FROM sys.columns c LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id WHERE OBJECT_NAME(c.object_id) = :table_name AND c.name = :column_name",
-        'postgresql': "SELECT col_description(:table_name::regclass, ordinal_position) FROM information_schema.columns WHERE table_name = :table_name AND column_name = :column_name"
+        'postgresql': """
+            SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int)
+            FROM pg_catalog.pg_class c
+            JOIN information_schema.columns cols
+            ON c.relname = cols.table_name
+            WHERE c.relname = :table_name AND cols.column_name = :column_name
+        """
     }.get(db_type.lower(), "")
 
     try:
@@ -82,7 +88,8 @@ def get_db_schema(
                             'column_name': column['name']
                         }).scalar() or ""
                 except SQLAlchemyError as e:
-                    raise ValueError(f"Failed to retrieve field metadata: {str(e)}")
+                    print(f"Warning: failed to get comment for {table_name}.{column['name']} - {e}")
+                    column_comment = ""
 
                 table_info['columns'].append({
                     'name': column['name'],
@@ -96,6 +103,48 @@ def get_db_schema(
         raise ValueError(f"Failed to retrieve database table metadata: {str(e)}")
     finally:
         engine.dispose()
+
+def format_schema_dsl(schema: dict[str, Any], with_type: bool = True) -> str:
+    """
+    将数据库表结构压缩为DSL格式
+    :param schema: get_db_schema 返回的结构
+    :param with_type: 是否保留字段类型
+    :return: 压缩后的 DSL 字符串
+    """
+    type_aliases = {
+        'INTEGER': 'i',
+        'INT': 'i',
+        'BIGINT': 'i',
+        'SMALLINT': 'i',
+        'TINYINT': 'i',
+        'VARCHAR': 's',
+        'TEXT': 's',
+        'CHAR': 's',
+        'DATETIME': 'dt',
+        'TIMESTAMP': 'dt',
+        'DATE': 'dt',
+        'DECIMAL': 'f',
+        'NUMERIC': 'f',
+        'FLOAT': 'f',
+        'DOUBLE': 'f',
+        'BOOLEAN': 'b',
+        'BOOL': 'b',
+        'JSON': 'j'
+    }
+
+    lines = []
+    for table_name, table_data in schema.items():
+        column_parts = []
+        for col in table_data['columns']:
+            if with_type:
+                # 获取原始类型，并尝试做类型简写
+                raw_type = col['type'].split('(')[0].upper()
+                col_type = type_aliases.get(raw_type, raw_type.lower())
+                column_parts.append(f"{col['name']}:{col_type}")
+            else:
+                column_parts.append(col['name'])
+        lines.append(f"T:{table_name}({', '.join(column_parts)})")
+    return "\n".join(lines)
 
 def execute_sql(
         db_type: str,
