@@ -23,7 +23,8 @@ class RookieText2dataTool(Tool):
             password=tool_parameters['password'],
             table_names=tool_parameters['table_names']
         )
-        dsl_text = format_schema_dsl(meta_data, with_type=True)
+        with_comment = tool_parameters.get('with_comment', False)
+        dsl_text = format_schema_dsl(meta_data, with_type=True, with_comment=with_comment)
         print(dsl_text)
         # 初始化模板加载器s
         prompt_loader = PromptLoader()

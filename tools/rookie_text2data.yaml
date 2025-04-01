@@ -190,6 +190,19 @@ parameters:
       pt_BR: custom_prompt
     llm_description: custom_prompt
     form: llm
+  - name: with_comment
+    type: boolean
+    required: false
+    label:
+      en_US: with_comment
+      zh_Hans: 是否包含注释
+      pt_BR: with_comment
+    human_description:
+      en_US: with_comment
+      zh_Hans: 是否包含注释
+      pt_BR: with_comment
+    llm_description: with_comment
+    form: form
 extra:
   python:
     source: tools/rookie_text2data.py
