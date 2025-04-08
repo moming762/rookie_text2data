@@ -68,3 +68,7 @@ Compatible with ​all non-deep-thinking models
 | sql           | string   | Yes      | SQL query to execute                     | CN/EN/PT                |
 
 3. Click "Execute" to run the SQL statement
+
+### License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
