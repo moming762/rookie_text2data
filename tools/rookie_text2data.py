@@ -25,7 +25,6 @@ class RookieText2dataTool(Tool):
         )
         with_comment = tool_parameters.get('with_comment', False)
         dsl_text = format_schema_dsl(meta_data, with_type=True, with_comment=with_comment)
-        print(dsl_text)
         # 初始化模板加载器s
         prompt_loader = PromptLoader()
         # 构建模板上下文
@@ -40,7 +39,6 @@ class RookieText2dataTool(Tool):
             limit=tool_parameters.get( 'limit', 100 ),
             user_custom_prompt=tool_parameters.get('custom_prompt', '')
         )
-        print(f"系统提示词：\n{system_prompt}")
         response = self.session.model.llm.invoke(
             model_config=LLMModelConfig(
                 provider=model_info.get('provider'),
@@ -57,7 +55,6 @@ class RookieText2dataTool(Tool):
             ],
             stream=False
         )
-        print(response)
         excute_sql = response.message.content
         if (isinstance(excute_sql, str)):
             if (tool_parameters['result_format'] == 'json'):

@@ -64,7 +64,7 @@ class RookieExcuteSqlTool(Tool):
                     )
                 else:
                     message_text = "No data found"
-                yield self.create_text_message(message_text)
+                yield self.create_text_message(self._to_readable_text(message_text))
         except Exception as e:
             raise ValueError(f"数据库操作失败：{str(e)}")
 
@@ -143,3 +143,15 @@ class RookieExcuteSqlTool(Tool):
             return float(obj)  # Decimal转浮点数
         # 添加其他需要处理的类型（如 bytes）
         raise TypeError(f"Unserializable type {type(obj)}")
+
+    def _to_readable_text(self, data: Any) -> str:
+        """生成可读性强的文本格式"""
+        if isinstance(data, list):
+            return '\n'.join(
+                json.dumps(row, ensure_ascii=False, default=self._custom_serializer)
+                for row in data
+            )
+        elif isinstance(data, dict):
+            return json.dumps(data, indent=2, ensure_ascii=False, default=self._custom_serializer)
+        else:
+            return str(data)
