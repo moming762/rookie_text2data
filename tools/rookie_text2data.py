@@ -3,13 +3,14 @@ from collections.abc import Generator
 from typing import Any
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
-from utils.alchemy_db_client import get_db_schema
 from dify_plugin.entities.model.llm import LLMModelConfig
 from dify_plugin.entities.tool import ToolInvokeMessage
 from dify_plugin.entities.model.message import SystemPromptMessage, UserPromptMessage
-
 from utils.prompt_loader import PromptLoader
-from utils.alchemy_db_client import format_schema_dsl
+# from utils.alchemy_db_client import format_schema_dsl
+# from utils.alchemy_db_client import get_db_schema
+from database_schema.connector import get_db_schema
+from database_schema.formatter import format_schema_dsl
 
 class RookieText2dataTool(Tool):
     def _invoke(self, tool_parameters: dict[str, Any]) -> Generator[ToolInvokeMessage]:
@@ -21,8 +22,10 @@ class RookieText2dataTool(Tool):
             database=tool_parameters['db_name'],
             username=tool_parameters['username'],
             password=tool_parameters['password'],
-            table_names=tool_parameters['table_names']
+            table_names=tool_parameters['table_names'],
+            schema_name=tool_parameters.get('schema_name', 'public')
         )
+        print(meta_data)
         with_comment = tool_parameters.get('with_comment', False)
         dsl_text = format_schema_dsl(meta_data, with_type=True, with_comment=with_comment)
         # 初始化模板加载器s
