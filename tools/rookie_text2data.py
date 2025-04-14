@@ -25,7 +25,6 @@ class RookieText2dataTool(Tool):
             table_names=tool_parameters['table_names'],
             schema_name=tool_parameters.get('schema_name', 'public')
         )
-        print(meta_data)
         with_comment = tool_parameters.get('with_comment', False)
         dsl_text = format_schema_dsl(meta_data, with_type=True, with_comment=with_comment)
         # 初始化模板加载器s
