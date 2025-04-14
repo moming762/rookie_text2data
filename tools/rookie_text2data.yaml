@@ -130,11 +130,11 @@ parameters:
     form: llm
     label:
       en_US: Schema name
-      zh_Hans: 数据库模式
+      zh_Hans: 数据库Schema PGSQL用户选填，默认为public
       pt_BR: Schema name
     human_description:
       en_US: Schema name
-      zh_Hans: 数据库模式
+      zh_Hans: 数据库Schema PGSQL用户选填，默认为public
       pt_BR: Schema name
     llm_description: Schema name
   - name: username
