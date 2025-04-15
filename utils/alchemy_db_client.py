@@ -2,6 +2,7 @@ from typing import Any
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 from urllib.parse import quote_plus # 用于对URL进行编码
+from typing import Any, Optional, Union
 
 def get_db_schema(
         db_type: str,
@@ -142,59 +143,82 @@ def format_schema_dsl(schema: dict[str, Any], with_type: bool = True, with_comme
     return "\n".join(lines)
 
 def execute_sql(
-        db_type: str,
-        host: str,
-        port: int,
-        database: str,
-        username: str,
-        password: str,
-        sql: str,
-        params: dict[str, Any] | None = None
-) -> list[dict[str, Any]] | dict[str, Any] | None:
+    db_type: str,
+    host: str,
+    port: int,
+    database: str,
+    username: str,
+    password: str,
+    sql: str,
+    params: Optional[dict[str, Any]] = None,
+    schema: Optional[str] = None
+) -> Union[list[dict[str, Any]], dict[str, Any], None]:
     """
-    连接不同类型数据库并执行 SQL 语句的函数。
+    增强版 SQL 执行函数，支持 PostgreSQL schema
     
-    参数:
-        db_type: 数据库类型，例如 'mysql', 'oracle', 'sqlserver', 'postgresql'
-        host: 数据库主机地址
-        port: 数据库端口号
-        database: 数据库名称
-        username: 用户名
-        password: 密码
-        sql: 要执行的 SQL 语句
-        params: SQL 参数字典（可选）
-
-    返回:
-        如果执行的是查询语句，则返回一个列表，列表中每个元素为一行字典；
-        如果执行的是非查询语句，则返回一个包含受影响行数的字典，例如 {"rowcount": 3}
+    参数新增:
+        schema: 指定目标schema（主要用于PostgreSQL）
     """
-    driver = {
+    # 参数预处理
+    params = params or {}
+    driver = _get_driver(db_type)
+    encoded_username = quote_plus(username)
+    encoded_password = quote_plus(password)
+    connect_args = {}
+
+    # PostgreSQL 特殊处理
+    if db_type.lower() == 'postgresql' and schema:
+        connect_args['options'] = f"-c search_path={schema}"
+    
+    # 构建连接字符串
+    connection_uri = _build_connection_uri(
+        db_type, driver, encoded_username, encoded_password,
+        host, port, database
+    )
+
+    try:
+        engine = create_engine(connection_uri, connect_args=connect_args)
+        with engine.begin() as conn:
+            # 显式设置schema（部分数据库需要）
+            if db_type.lower() == 'postgresql' and schema:
+                conn.execute(text(f"SET search_path TO {schema}"))
+                
+            result_proxy = conn.execute(text(sql), params)
+            
+            return _process_result(result_proxy)
+            
+    except SQLAlchemyError as e:
+        raise ValueError(f"数据库操作失败：{str(e)}")
+    finally:
+        if 'engine' in locals():
+            engine.dispose()
+
+def _get_driver(db_type: str) -> str:
+    """获取数据库驱动"""
+    drivers = {
         'mysql': 'pymysql',
         'oracle': 'cx_oracle',
         'sqlserver': 'pymssql',
         'postgresql': 'psycopg2'
-    }.get(db_type.lower(), '')
+    }
+    return drivers.get(db_type.lower(), '')
 
-    encoded_username = quote_plus(username)
-    encoded_password = quote_plus(password)
-    
-    # 创建数据库引擎
-    engine = create_engine(f'{db_type.lower()}+{driver}://{encoded_username}:{encoded_password}@{host}:{port}/{database}')
-    
-    try:
-        # 使用 begin() 确保事务自动提交
-        with engine.begin() as conn:
-            stmt = text(sql)
-            result_proxy = conn.execute(stmt, params or {})
-            # 如果返回行数据，则为查询语句
-            if result_proxy.returns_rows:
-                rows = result_proxy.fetchall()
-                keys = result_proxy.keys()
-                return [dict(zip(keys, row)) for row in rows]
-            else:
-                # 非查询语句返回受影响的行数
-                return {"rowcount": result_proxy.rowcount}
-    except SQLAlchemyError as e:
-        raise ValueError(f"Database error: {str(e)}")
-    finally:
-        engine.dispose()
+def _build_connection_uri(
+    db_type: str,
+    driver: str,
+    username: str,
+    password: str,
+    host: str,
+    port: int,
+    database: str
+) -> str:
+    """构建数据库连接字符串"""
+    if db_type.lower() == 'sqlserver':
+        return f"mssql+{driver}://{username}:{password}@{host}:{port}/{database}?charset=utf8"
+    return f"{db_type}+{driver}://{username}:{password}@{host}:{port}/{database}"
+
+def _process_result(result_proxy) -> Union[list[dict], dict, None]:
+    """处理执行结果"""
+    if result_proxy.returns_rows:
+        return [dict(row._mapping) for row in result_proxy]
+    return {"rowcount": result_proxy.rowcount}

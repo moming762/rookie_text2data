@@ -124,6 +124,19 @@ parameters:
       zh_Hans: 数据表名称
       pt_BR: table_names
     llm_description: table_names
+  - name: schema_name
+    type: string
+    required: false
+    form: llm
+    label:
+      en_US: Schema name
+      zh_Hans: 数据库Schema PGSQL用户选填，默认为public
+      pt_BR: Schema name
+    human_description:
+      en_US: Schema name
+      zh_Hans: 数据库Schema PGSQL用户选填，默认为public
+      pt_BR: Schema name
+    llm_description: Schema name
   - name: username
     type: string
     required: true

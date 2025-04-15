@@ -1,7 +1,7 @@
 ## rookie_text2data
 
 **Author:** jaguarliuu
-**Version:** 0.1.0
+**Version:** 0.3.0
 **Type:** tool
 
 ### Description
@@ -15,7 +15,8 @@
 为方便交流，搞个交流群，大家一起交流学习！
 
 
-![微信](./_assets/1.png)
+> Contact:
+>  - Wechat： L1763077056
 
 ### ✨ 核心特性
 
@@ -75,3 +76,6 @@
 
 3. 点击执行，执行 sql 语句
 
+### 许可证
+
+本项目采用 Apache License 2.0 许可证 - 查看 [LICENSE](LICENSE) 文件了解详细信息。

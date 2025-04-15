@@ -1,7 +1,7 @@
 ## rookie_text2data
 
 **Author:** jaguarliuu
-**Version:** 0.2.1
+**Version:** 0.3.0
 **Type:** tool
 
 ### Description
@@ -11,7 +11,8 @@ A tool that converts natural language into secure and optimized SQL queries, sup
 ### 声明
 We are truly grateful for the overwhelming interest in this experimental project. Your feedback is invaluable for improving this plugin. Join our WeChat group for discussions and collaboration opportunities!
 
-![WeChat](./_assets/1.png)
+> Contact:
+>  - Wechat： L1763077056
 
 ### ✨ Core Features
 
@@ -68,3 +69,7 @@ Compatible with ​all non-deep-thinking models
 | sql           | string   | Yes      | SQL query to execute                     | CN/EN/PT                |
 
 3. Click "Execute" to run the SQL statement
+
+### License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.

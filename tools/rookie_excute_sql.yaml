@@ -99,6 +99,19 @@ parameters:
       zh_Hans: 密码
       pt_BR: Password
     llm_description: Password
+  - name: schema
+    type: string
+    required: false
+    form: llm
+    label:
+      en_US: Schema name
+      zh_Hans: 数据库Schema PGSQL用户选填，默认为public
+      pt_BR: Schema name
+    human_description:
+      en_US: Schema name
+      zh_Hans: 数据库Schema PGSQL用户选填，默认为public
+      pt_BR: Schema name
+    llm_description: Schema name
   - name: sql
     type: string
     required: true
