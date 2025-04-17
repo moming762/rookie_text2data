@@ -25,25 +25,27 @@ def get_db_schema(
     :return: 包含所有表结构信息的字典
     """
     result: dict[str, Any] = {}
+    db_type = 'mssql' if db_type == 'sqlserver' else db_type
     # 构建连接URL
     driver = {
         'mysql': 'pymysql',
         'oracle': 'cx_oracle',
-        'sqlserver': 'pymssql',
+        'mssql': 'pyodbc',
         'postgresql': 'psycopg2'
     }.get(db_type.lower(), '')
 
     encoded_username = quote_plus(username)
     encoded_password = quote_plus(password)
+    # separator = ':' if db_type is 'mssql' else ','
 
-    engine = create_engine(f'{db_type.lower()}+{driver}://{encoded_username}:{encoded_password}@{host}:{port}/{database}')
+    engine = create_engine(f'{db_type.lower()}+{driver}://{encoded_username}:{encoded_password}@{host}{separator}{port}/{database}')
     inspector = inspect(engine)
 
     # 获取字段注释的SQL语句
     column_comment_sql = {
         'mysql': f"SELECT COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '{database}' AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name",
         'oracle': "SELECT COMMENTS FROM ALL_COL_COMMENTS WHERE TABLE_NAME = :table_name AND COLUMN_NAME = :column_name",
-        'sqlserver': "SELECT CAST(ep.value AS NVARCHAR(MAX)) FROM sys.columns c LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id WHERE OBJECT_NAME(c.object_id) = :table_name AND c.name = :column_name",
+        'mssql': "SELECT CAST(ep.value AS NVARCHAR(MAX)) FROM sys.columns c LEFT JOIN sys.extended_properties ep ON ep.major_id = c.object_id AND ep.minor_id = c.column_id WHERE OBJECT_NAME(c.object_id) = :table_name AND c.name = :column_name",
         'postgresql': """
             SELECT pg_catalog.col_description(c.oid, cols.ordinal_position::int)
             FROM pg_catalog.pg_class c
@@ -159,6 +161,7 @@ def execute_sql(
     参数新增:
         schema: 指定目标schema（主要用于PostgreSQL）
     """
+
     # 参数预处理
     params = params or {}
     driver = _get_driver(db_type)
@@ -169,6 +172,9 @@ def execute_sql(
     # PostgreSQL 特殊处理
     if db_type.lower() == 'postgresql' and schema:
         connect_args['options'] = f"-c search_path={schema}"
+
+    # if db_type.lower() == 'sqlserver' and schema:
+    #     connect_args[]
     
     # 构建连接字符串
     connection_uri = _build_connection_uri(
@@ -198,7 +204,7 @@ def _get_driver(db_type: str) -> str:
     drivers = {
         'mysql': 'pymysql',
         'oracle': 'cx_oracle',
-        'sqlserver': 'pymssql',
+        'sqlserver': 'pyodbc',
         'postgresql': 'psycopg2'
     }
     return drivers.get(db_type.lower(), '')
@@ -213,9 +219,9 @@ def _build_connection_uri(
     database: str
 ) -> str:
     """构建数据库连接字符串"""
-    if db_type.lower() == 'sqlserver':
-        return f"mssql+{driver}://{username}:{password}@{host}:{port}/{database}?charset=utf8"
-    return f"{db_type}+{driver}://{username}:{password}@{host}:{port}/{database}"
+    separator = ':' if db_type == 'sqlserver' else ','
+    db_type = db_type if db_type != 'sqlserver' else 'mssql'
+    return f"{db_type}+{driver}://{username}:{password}@{host}{separator}{port}/{database}"
 
 def _process_result(result_proxy) -> Union[list[dict], dict, None]:
     """处理执行结果"""

@@ -5,12 +5,16 @@ from urllib.parse import quote_plus
 
 class SQLServerInspector(BaseInspector):
     """SQL Server元数据获取实现"""
+
+    def __init__(self, host, port, database, username, password, schema_name = None, **kwargs):
+        super().__init__(host, port, database, username, password, schema_name, **kwargs)
+        self.schema_name = schema_name
     
     def build_conn_str(self, host: str, port: int, database: str,
                       username: str, password: str) -> str:
         return (
             f"mssql+pyodbc://{quote_plus(username)}:{quote_plus(password)}"
-            f"@{host}:{port}/{database}?"
+            f"@{host},{port}/{database}?"
             f"driver=ODBC+Driver+17+for+SQL+Server"
         )
     
