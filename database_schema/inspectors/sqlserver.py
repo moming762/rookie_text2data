@@ -12,9 +12,9 @@ class SQLServerInspector(BaseInspector):
     
     def build_conn_str(self, host: str, port: int, database: str,
                       username: str, password: str) -> str:
-        # import os
-        # driver = 'ODBC+Driver+17+for+SQL+Server' if os.name == 'posix' else 'SQL Server'
-        driver = 'ODBC+Driver+17+for+SQL+Server'
+        import os
+        driver = 'ODBC+Driver+17+for+SQL+Server' if os.name == 'posix' else 'SQL Server'
+        # driver = 'ODBC+Driver+17+for+SQL+Server'
         return (
             f"mssql+pyodbc://{quote_plus(username)}:{quote_plus(password)}"
             f"@{host},{port}/{database}?"

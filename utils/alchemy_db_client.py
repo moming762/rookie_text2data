@@ -176,7 +176,6 @@ def execute_sql(
     if db_type.lower() == 'sqlserver':
         import os
         driver_extra_info = 'ODBC+Driver+17+for+SQL+Server' if os.name == 'posix' else 'SQL Server'
-        print(driver_extra_info)
     # 构建连接字符串
     connection_uri = _build_connection_uri(
         db_type, driver, encoded_username, encoded_password,
@@ -221,10 +220,10 @@ def _build_connection_uri(
     driver_info: str
 ) -> str:
     """构建数据库连接字符串"""
-    separator = ':' if db_type == 'sqlserver' else ','
+    separator = ':' if db_type != 'sqlserver' else ','
     db_type = db_type if db_type != 'sqlserver' else 'mssql'
     extra_info = '' if driver_info == None else f'?driver={driver_info}'
-    print(f"{db_type}+{driver}://{username}:{password}@{host}{separator}{port}/{database}{extra_info}")
+
     return f"{db_type}+{driver}://{username}:{password}@{host}{separator}{port}/{database}{extra_info}"
 
 def _process_result(result_proxy) -> Union[list[dict], dict, None]:
