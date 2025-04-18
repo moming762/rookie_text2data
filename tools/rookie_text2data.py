@@ -23,7 +23,7 @@ class RookieText2dataTool(Tool):
             username=tool_parameters['username'],
             password=tool_parameters['password'],
             table_names=tool_parameters['table_names'],
-            schema_name=tool_parameters.get('schema_name', 'public')
+            schema_name=tool_parameters.get('schema_name')
         )
         with_comment = tool_parameters.get('with_comment', False)
         dsl_text = format_schema_dsl(meta_data, with_type=True, with_comment=with_comment)
