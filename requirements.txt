@@ -1,9 +1,9 @@
 # 核心依赖
-dify_plugin~=0.0.1b67
+dify_plugin~=0.0.1b72
 sqlalchemy>=2.0.0
 
 # 数据库驱动
-# pyodbc>=4.0.39       # SQL Server新驱动
+pyodbc>=4.0.39       # SQL Server新驱动
 pymysql>=1.1.1       # MySQL驱动
 psycopg2-binary>=2.9.10  # PostgreSQL驱动
 

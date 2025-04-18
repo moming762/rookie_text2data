@@ -219,16 +219,10 @@ def _build_connection_uri(
     database: str,
 ) -> str:
     """构建数据库连接字符串"""
-<<<<<<< HEAD
-    separator = ':' if db_type != 'sqlserver' else ','
-    db_type = db_type if db_type != 'sqlserver' else 'mssql'
-    extra_info = '' if driver_info == None else f'?driver={driver_info}'
 
-    return f"{db_type}+{driver}://{username}:{password}@{host}{separator}{port}/{database}{extra_info}"
-=======
     db_type = db_type if db_type != 'sqlserver' else 'mssql'
     return f"{db_type}+{driver}://{username}:{password}@{host}:{port}/{database}"
->>>>>>> debug
+
 
 def _process_result(result_proxy) -> Union[list[dict], dict, None]:
     """处理执行结果"""

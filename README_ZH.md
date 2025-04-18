@@ -1,7 +1,7 @@
 ## rookie_text2data
 
 **Author:** jaguarliuu
-**Version:** 0.3.0
+**Version:** 0.3.1
 **Type:** tool
 
 ### Description
