@@ -4,24 +4,21 @@ from sqlalchemy.engine import reflection
 from urllib.parse import quote_plus
 
 class SQLServerInspector(BaseInspector):
-    """SQLServer元数据获取实现"""
-    
-    def __init__(self, host: str, port: int, database: str,
-                 username: str, password: str, schema_name: str = None, **kwargs):
-        # 在SQL Server中，schema和database是不同的概念
-        # 如果未指定schema，默认使用"dbo"
-        schema_name = schema_name or "dbo"
-        super().__init__(host, port, database, username, password, schema_name)
+    """SQL Server元数据获取实现"""
+
+    def __init__(self, host, port, database, username, password, schema_name = None, **kwargs):
+        super().__init__(host, port, database, username, password, schema_name, **kwargs)
+        self.schema_name = schema_name if schema_name != None else 'dbo'
     
     def build_conn_str(self, host: str, port: int, database: str,
                       username: str, password: str) -> str:
-        import os
-        driver = 'ODBC+Driver+17+for+SQL+Server' if os.name == 'posix' else 'SQL Server'
+
+        # import os
+        # driver = 'ODBC+Driver+17+for+SQL+Server' if os.name == 'posix' else 'SQL Server'
         # driver = 'ODBC+Driver+17+for+SQL+Server'
         return (
-            f"mssql+pyodbc://{quote_plus(username)}:{quote_plus(password)}"
-            f"@{host},{port}/{database}?"
-            f"driver={driver}"
+            f"mssql+pymssql://{quote_plus(username)}:{quote_plus(password)}"
+            f"@{host}:{port}/{database}"
         )
     
     def get_table_names(self, inspector: reflection.Inspector) -> list[str]:

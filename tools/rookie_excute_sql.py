@@ -46,7 +46,7 @@ class RookieExecuteSqlTool(Tool):
 
         if self._contains_risk_commands(params['sql']):
             raise ValueError("SQL语句包含危险操作")
-
+        params['schema'] = params.get('schema')if params.get('schema') != None else 'dbo' if params['db_type'] == 'sqlserver' else 'public'
         # 数据库执行参数
         execute_params = {
             'db_type': params['db_type'],
