@@ -168,18 +168,19 @@ def execute_sql(
     encoded_username = quote_plus(username)
     encoded_password = quote_plus(password)
     connect_args = {}
-
+    driver_extra_info = None
     # PostgreSQL 特殊处理
     if db_type.lower() == 'postgresql' and schema:
         connect_args['options'] = f"-c search_path={schema}"
 
-    # if db_type.lower() == 'sqlserver' and schema:
-    #     connect_args[]
-    
+    if db_type.lower() == 'sqlserver':
+        import os
+        driver_extra_info = 'ODBC+Driver+17+for+SQL+Server' if os.name == 'posix' else 'SQL Server'
+        print(driver_extra_info)
     # 构建连接字符串
     connection_uri = _build_connection_uri(
         db_type, driver, encoded_username, encoded_password,
-        host, port, database
+        host, port, database, driver_extra_info
     )
 
     try:
@@ -216,12 +217,15 @@ def _build_connection_uri(
     password: str,
     host: str,
     port: int,
-    database: str
+    database: str,
+    driver_info: str
 ) -> str:
     """构建数据库连接字符串"""
     separator = ':' if db_type == 'sqlserver' else ','
     db_type = db_type if db_type != 'sqlserver' else 'mssql'
-    return f"{db_type}+{driver}://{username}:{password}@{host}{separator}{port}/{database}"
+    extra_info = '' if driver_info == None else f'?driver={driver_info}'
+    print(f"{db_type}+{driver}://{username}:{password}@{host}{separator}{port}/{database}{extra_info}")
+    return f"{db_type}+{driver}://{username}:{password}@{host}{separator}{port}/{database}{extra_info}"
 
 def _process_result(result_proxy) -> Union[list[dict], dict, None]:
     """处理执行结果"""
