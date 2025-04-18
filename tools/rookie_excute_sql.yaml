@@ -32,6 +32,9 @@ parameters:
       - label:
           en_US: PostgreSQL
         value: postgresql
+      - label:
+          en_US: SQL Server
+        value: sqlserver
   - name: host
     type: string
     required: true
