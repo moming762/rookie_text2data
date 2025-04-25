@@ -22,42 +22,40 @@ class PostgreSQLInspector(BaseInspector):
     
     def get_table_comment(self, inspector: reflection.Inspector, 
                         table_name: str) -> str:
-        with self.engine.connect() as conn:
-            sql = """
-                SELECT obj_description(c.oid, 'pg_class')
-                FROM pg_catalog.pg_class c
-                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-                WHERE n.nspname = :schema AND c.relname = :table
-            """
-            result = conn.execute(
-                text(sql), 
-                {"schema": self.schema_name, "table": table_name}
-            ).scalar()
-            return result or ""
+        sql = """
+            SELECT obj_description(c.oid, 'pg_class')
+            FROM pg_catalog.pg_class c
+            LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = :schema AND c.relname = :table
+        """
+        result = self.conn.execute(
+            text(sql), 
+            {"schema": self.schema_name, "table": table_name}
+        ).scalar()
+        return result or ""
     
     def get_column_comment(self, inspector: reflection.Inspector,
                          table_name: str, column_name: str) -> str:
-        with self.engine.connect() as conn:
-            sql = """
-                SELECT pg_catalog.col_description(c.oid, a.attnum)
-                FROM pg_catalog.pg_class c
-                JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-                JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid
-                WHERE n.nspname = :schema
-                AND c.relname = :table
-                AND a.attname = :column
-                AND a.attnum > 0
-                AND NOT a.attisdropped
-            """
-            result = conn.execute(
-                text(sql),
-                {
-                    "schema": self.schema_name,
-                    "table": table_name,
-                    "column": column_name
-                }
-            ).scalar()
-            return result or ""
+        sql = """
+            SELECT pg_catalog.col_description(c.oid, a.attnum)
+            FROM pg_catalog.pg_class c
+            JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+            JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid
+            WHERE n.nspname = :schema
+            AND c.relname = :table
+            AND a.attname = :column
+            AND a.attnum > 0
+            AND NOT a.attisdropped
+        """
+        result = self.conn.execute(
+            text(sql),
+            {
+                "schema": self.schema_name,
+                "table": table_name,
+                "column": column_name
+            }
+        ).scalar()
+        return result or ""
     
     def normalize_type(self, raw_type: str) -> str:
         type_map = {

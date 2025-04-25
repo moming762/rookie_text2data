@@ -2,6 +2,12 @@
 from abc import ABC, abstractmethod
 from sqlalchemy import create_engine
 from sqlalchemy.engine import reflection
+from sqlalchemy.exc import (
+    OperationalError,
+    ArgumentError,
+    NoSuchModuleError,
+    TimeoutError
+)
 from urllib.parse import quote_plus
 
 class BaseInspector(ABC):
@@ -9,9 +15,31 @@ class BaseInspector(ABC):
     
     def __init__(self, host: str, port: int, database: str, 
                 username: str, password: str, schema_name: str = None, **kwargs):
-        self.engine = create_engine(
-            self.build_conn_str(host, port, database, username, password)
-        )
+        try:
+            self.engine = create_engine(
+                self.build_conn_str(host, port, database, username, password)
+            )
+            self.conn = self.engine.connect()
+        except ArgumentError as e:
+            raise ValueError(f"连接字符串格式错误: {str(e)}")
+        except NoSuchModuleError as e:
+            raise ValueError(f"驱动未安装")
+        except OperationalError as e:
+            '''
+                这里可以捕获uesr_name,database_name,password 抛给用户
+                但是不能捕获IP, Port 会被 Dify 捕获。
+                
+                core/server/tcp/request_render.py
+                raise Exception("Connection is closed")
+            '''
+            raise ValueError(f"无法连接到数据库, 请检查数据库名称")
+        except TimeoutError as e:
+            raise ValueError(f"请检查IP/Port")
+        except Exception as e:
+            raise ValueError(f"建立数据库连接时发生错误: {str(e)}")
+        finally:
+            if self.engine in locals():
+                self.engine.dispose()
         self.schema_name = schema_name  # 所有子类都会继承这个属性
     
     @abstractmethod

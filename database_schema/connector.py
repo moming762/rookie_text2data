@@ -17,17 +17,17 @@ def get_db_schema(
     获取数据库表结构信息
     """
     engine: Engine | None = None
-    try:
-        inspector = InspectorFactory.create_inspector(
-            db_type=db_type,
-            host=host,
-            port=port,
-            database=database,
-            username=username,
-            password=password,
-            schema_name=schema_name
-        )
-        
+    
+    inspector = InspectorFactory.create_inspector(
+        db_type=db_type,
+        host=host,
+        port=port,
+        database=database,
+        username=username,
+        password=password,
+        schema_name=schema_name
+    )
+    try:    
         engine = inspector.engine
         inspector_obj = inspect(engine)
         
@@ -73,10 +73,10 @@ def get_db_schema(
                 'columns': columns
             }
         return result
-        
+        # 应该在这里
     except Exception as e:
         print(f"Database connection failed: {str(e)}")
         return None
     finally:
-        if engine:
+        if engine in locals():
             engine.dispose()

@@ -26,42 +26,40 @@ class SQLServerInspector(BaseInspector):
     
     def get_table_comment(self, inspector: reflection.Inspector,
                          table_name: str) -> str:
-        with self.engine.connect() as conn:
-            sql = """
-                SELECT ep.value
-                FROM sys.tables t
-                LEFT JOIN sys.extended_properties ep ON 
-                    ep.major_id = t.object_id AND
-                    ep.minor_id = 0 AND
-                    ep.name = 'MS_Description'
-                WHERE t.name = :table_name AND
-                      SCHEMA_NAME(t.schema_id) = :schema_name
-            """
-            return conn.execute(text(sql), {
-                'table_name': table_name,
-                'schema_name': self.schema_name
-            }).scalar() or ""
+        sql = """
+            SELECT ep.value
+            FROM sys.tables t
+            LEFT JOIN sys.extended_properties ep ON 
+                ep.major_id = t.object_id AND
+                ep.minor_id = 0 AND
+                ep.name = 'MS_Description'
+            WHERE t.name = :table_name AND
+                    SCHEMA_NAME(t.schema_id) = :schema_name
+        """
+        return self.conn.execute(text(sql), {
+            'table_name': table_name,
+            'schema_name': self.schema_name
+        }).scalar() or ""
     
     def get_column_comment(self, inspector: reflection.Inspector,
                           table_name: str, column_name: str) -> str:
-        with self.engine.connect() as conn:
-            sql = """
-                SELECT ep.value
-                FROM sys.columns c
-                INNER JOIN sys.tables t ON c.object_id = t.object_id
-                LEFT JOIN sys.extended_properties ep ON 
-                    ep.major_id = c.object_id AND
-                    ep.minor_id = c.column_id AND
-                    ep.name = 'MS_Description'
-                WHERE t.name = :table_name AND
-                      c.name = :column_name AND
-                      SCHEMA_NAME(t.schema_id) = :schema_name
-            """
-            return conn.execute(text(sql), {
-                'table_name': table_name,
-                'column_name': column_name,
-                'schema_name': self.schema_name
-            }).scalar() or ""
+        sql = """
+            SELECT ep.value
+            FROM sys.columns c
+            INNER JOIN sys.tables t ON c.object_id = t.object_id
+            LEFT JOIN sys.extended_properties ep ON 
+                ep.major_id = c.object_id AND
+                ep.minor_id = c.column_id AND
+                ep.name = 'MS_Description'
+            WHERE t.name = :table_name AND
+                    c.name = :column_name AND
+                    SCHEMA_NAME(t.schema_id) = :schema_name
+        """
+        return self.conn.execute(text(sql), {
+            'table_name': table_name,
+            'column_name': column_name,
+            'schema_name': self.schema_name
+        }).scalar() or ""
     
     def normalize_type(self, raw_type: str) -> str:
         # 移除括号内的长度或精度信息
