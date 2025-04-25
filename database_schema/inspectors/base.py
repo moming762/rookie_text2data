@@ -32,7 +32,7 @@ class BaseInspector(ABC):
                 core/server/tcp/request_render.py
                 raise Exception("Connection is closed")
             '''
-            raise ValueError(f"无法连接到数据库, 请检查数据库名称")
+            raise ValueError(f"无法连接到数据库, 请检查数据库名称，用户名，密码")
         except TimeoutError as e:
             raise ValueError(f"请检查IP/Port")
         except Exception as e:
