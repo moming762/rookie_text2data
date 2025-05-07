@@ -39,7 +39,7 @@ parameters:
     type: number
     required: false
     min: 1
-    max: 1000
+    max: 100000
     label:
       en_US: limit
       zh_Hans: SQL返回数据量限制
