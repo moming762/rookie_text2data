@@ -28,18 +28,18 @@ class MySQLInspector(BaseInspector):
     
     def get_column_comment(self, inspector: reflection.Inspector,
                           table_name: str, column_name: str) -> str:
-        with self.engine.connect() as conn:
-            sql = """
-                SELECT COLUMN_COMMENT 
-                FROM information_schema.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
-                    AND TABLE_NAME = :table_name 
-                    AND COLUMN_NAME = :column_name
-            """
-            return conn.execute(text(sql), {
-                'table_name': table_name,
-                'column_name': column_name
-            }).scalar() or ""
+
+        sql = """
+            SELECT COLUMN_COMMENT 
+            FROM information_schema.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = :table_name 
+                AND COLUMN_NAME = :column_name
+        """
+        return self.conn.execute(text(sql), {
+            'table_name': table_name,
+            'column_name': column_name
+        }).scalar() or ""
     
     def normalize_type(self, raw_type: str) -> str:
         return raw_type.split('(')[0].upper()
